@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-primary: 139 92 246;
+    --color-primary-hover: 124 58 237;
+    --color-surface: 255 255 255;
+    --color-bg-start: 245 214 232;
+    --color-bg-mid: 220 214 247;
+    --color-bg-end: 201 224 247;
+    --radius: 0.75rem;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background: linear-gradient(135deg, #F5D6E8 0%, #DCD6F7 50%, #C9E0F7 100%);
+    min-height: 100vh;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+}
+
+@layer utilities {
+  .gradient-bg {
+    background: linear-gradient(135deg, #F5D6E8 0%, #DCD6F7 50%, #C9E0F7 100%);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 20px 60px rgba(139, 92, 246, 0.08), 0 4px 16px rgba(0, 0, 0, 0.06);
+  }
+
+  .sidebar-active {
+    background: linear-gradient(135deg, #EDE9FE, #E0E7FF);
+    color: #7C3AED;
+    position: relative;
+  }
+
+  .sidebar-active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 60%;
+    background: #7C3AED;
+    border-radius: 0 3px 3px 0;
+  }
+
+  .avatar-overlap {
+    display: flex;
+  }
+
+  .avatar-overlap > * + * {
+    margin-left: -8px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #DDD6FE;
+    border-radius: 4px;
+  }
+
+  .task-row-hover {
+    transition: all 0.15s ease;
+  }
+
+  .task-row-hover:hover {
+    background: #FAFAFA;
+    transform: translateX(2px);
+  }
+
+  .pulse-dot {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .5; }
+  }
+
+  .fade-in {
+    animation: fadeIn 0.3s ease forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .slide-in {
+    animation: slideIn 0.25s ease forwards;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+}
