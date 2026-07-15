@@ -57,12 +57,29 @@ export function DashboardPage() {
         .limit(10),
       supabase
         .from('workspace_members')
-        .select('*')
+        .select(`
+          *,
+          profiles:user_id (
+            email,
+            full_name
+          )
+        `)
         .eq('workspace_id', workspace.id),
     ])
 
     setTasks(tasksRes.data || [])
-    setMembers(membersRes.data || [])
+    
+    if (membersRes.data) {
+      setMembers(
+        membersRes.data.map((m: any) => ({
+          ...m,
+          user_email: m.profiles?.email || '',
+          user_name: m.profiles?.full_name || m.profiles?.email?.split('@')[0] || 'User',
+        }))
+      )
+    } else {
+      setMembers([])
+    }
     setLoading(false)
   }
 

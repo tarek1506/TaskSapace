@@ -78,10 +78,27 @@ export function MembersPage() {
     setLoading(true)
     const { data } = await supabase
       .from('workspace_members')
-      .select('*')
+      .select(`
+        *,
+        profiles:user_id (
+          email,
+          full_name
+        )
+      `)
       .eq('workspace_id', workspace.id)
       .order('joined_at', { ascending: true })
-    setMembers(data || [])
+
+    if (data) {
+      setMembers(
+        data.map((m: any) => ({
+          ...m,
+          user_email: m.profiles?.email || '',
+          user_name: m.profiles?.full_name || m.profiles?.email?.split('@')[0] || 'User',
+        }))
+      )
+    } else {
+      setMembers([])
+    }
     setLoading(false)
   }
 

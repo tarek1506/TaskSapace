@@ -41,11 +41,30 @@ export function TaskDetailPage() {
     setLoading(true)
     const [taskRes, membersRes] = await Promise.all([
       supabase.from('tasks').select('*').eq('id', taskId!).single(),
-      supabase.from('workspace_members').select('*').eq('workspace_id', workspaceId!),
+      supabase
+        .from('workspace_members')
+        .select(`
+          *,
+          profiles:user_id (
+            email,
+            full_name
+          )
+        `)
+        .eq('workspace_id', workspaceId!),
     ])
 
     if (taskRes.data) setTask(taskRes.data)
-    setMembers(membersRes.data || [])
+    if (membersRes.data) {
+      setMembers(
+        membersRes.data.map((m: any) => ({
+          ...m,
+          user_email: m.profiles?.email || '',
+          user_name: m.profiles?.full_name || m.profiles?.email?.split('@')[0] || 'User',
+        }))
+      )
+    } else {
+      setMembers([])
+    }
     setLoading(false)
   }
 
