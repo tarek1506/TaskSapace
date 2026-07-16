@@ -39,7 +39,7 @@ export function TasksPage() {
   const [deleting, setDeleting] = useState(false)
   
   // Drag state
-  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null)
+  const [draggedTaskIdState, setDraggedTaskId] = useState<string | null>(null)
   const [dropTargetId, setDropTargetId] = useState<string | null>(null)
   const [dropTargetStatus, setDropTargetStatus] = useState<TaskStatus | null>(null)
 
@@ -70,6 +70,7 @@ export function TasksPage() {
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
     setDraggedTaskId(taskId)
     e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('application/x-task-id', taskId)
     e.dataTransfer.setData('text/plain', taskId)
   }
 
@@ -89,42 +90,83 @@ export function TasksPage() {
     e.preventDefault()
     e.stopPropagation()
 
-    if (!draggedTaskId) {
+    // Use dataTransfer for reliability (fallback to state)
+    const droppedTaskId = e.dataTransfer.getData('application/x-task-id') || draggedTaskIdState
+    
+    if (!droppedTaskId) {
+      console.error('[DragDrop] No task ID available')
       setDraggedTaskId(null)
       setDropTargetId(null)
       setDropTargetStatus(null)
       return
     }
 
-    const draggedTask = tasks.find(t => t.id === draggedTaskId)
+    const draggedTask = tasks.find(t => t.id === droppedTaskId)
     if (!draggedTask) {
+      console.error('[DragDrop] Task not found in local state:', droppedTaskId)
       setDraggedTaskId(null)
       setDropTargetId(null)
       setDropTargetStatus(null)
       return
     }
 
-    // Calculate new order
+    const originalStatus = draggedTask.status
+    const statusChanged = originalStatus !== targetStatus
+
+    console.log('[DragDrop] Drop detected:', {
+      taskId: droppedTaskId,
+      originalStatus,
+      targetStatus,
+      statusChanged,
+      workspaceId: workspace.id,
+      taskWorkspaceId: draggedTask.workspace_id
+    })
+
+    // Update database FIRST (important for persistence)
+    if (statusChanged) {
+      console.log('[DragDrop] Attempting database update...')
+      const { data, error, status } = await supabase
+        .from('tasks')
+        .update({ status: targetStatus })
+        .eq('id', droppedTaskId)
+        .select()
+        .single()
+      
+      console.log('[DragDrop] Database response:', { data, error, status })
+      
+      if (error) {
+        console.error('[DragDrop] Failed to update task status:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        })
+      } else if (!data) {
+        console.warn('[DragDrop] Update returned no data - possible RLS block')
+      } else {
+        console.log('[DragDrop] Update successful:', data)
+      }
+    }
+
+    // Then update local state
     setTasks(prev => {
       const taskList = [...prev]
-      const draggedIndex = taskList.findIndex(t => t.id === draggedTaskId)
-      const draggedItem = taskList.splice(draggedIndex, 1)[0]
+      const draggedIndex = taskList.findIndex(t => t.id === droppedTaskId)
+      if (draggedIndex === -1) return prev
       
-      // Update status if moving to different column
-      draggedItem.status = targetStatus
-
+      const draggedItem = { ...taskList[draggedIndex], status: targetStatus }
+      taskList.splice(draggedIndex, 1)
+      
       if (targetTaskId) {
         // Dropped on another task
         const targetIndex = taskList.findIndex(t => t.id === targetTaskId)
         if (targetIndex !== -1) {
-          // Insert before the target
           taskList.splice(targetIndex, 0, draggedItem)
         } else {
-          // Append to end
           taskList.push(draggedItem)
         }
       } else {
-        // Dropped on column empty area - append to that status
+        // Dropped on column empty area
         const sameStatusTasks = taskList.filter(t => t.status === targetStatus)
         const otherTasks = taskList.filter(t => t.status !== targetStatus)
         sameStatusTasks.push(draggedItem)
@@ -133,11 +175,6 @@ export function TasksPage() {
 
       return taskList
     })
-
-    // Update database if status changed
-    if (draggedTask.status !== targetStatus) {
-      await supabase.from('tasks').update({ status: targetStatus }).eq('id', draggedTaskId)
-    }
 
     setDraggedTaskId(null)
     setDropTargetId(null)
@@ -290,7 +327,7 @@ export function TasksPage() {
                   </div>
                   <div className="flex-1 bg-gray-50/80 rounded-2xl p-3 space-y-2 overflow-y-auto scrollbar-thin">
                     {colTasks.map((task) => {
-                      const isDragging = draggedTaskId === task.id
+                      const isDragging = draggedTaskIdState === task.id
                       const isDropHere = dropTargetId === task.id && dropTargetStatus === status
 
                       return (

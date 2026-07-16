@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
-import { Plus, Mail, Lock, Shield, Eye, EyeOff, Trash2, Crown } from 'lucide-react'
+import { Plus, Mail, Lock, Shield, Eye, EyeOff, Trash2, Crown, Pencil, Check, X, Circle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 import { TopHeader } from '@/components/layout/Sidebar'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -15,6 +16,10 @@ interface OutletCtx {
   workspace: Workspace
   member: WorkspaceMember
   isOwner: boolean
+}
+
+interface MemberWithProfile extends WorkspaceMember {
+  last_seen_at?: string | null
 }
 
 const PERMISSION_FIELDS: {
@@ -56,13 +61,19 @@ const PERMISSION_FIELDS: {
 
 export function MembersPage() {
   const { workspace, isOwner } = useOutletContext<OutletCtx>()
+  const { user: currentUser } = useAuth()
 
-  const [members, setMembers] = useState<WorkspaceMember[]>([])
+  const [members, setMembers] = useState<MemberWithProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [showInvite, setShowInvite] = useState(false)
-  const [selectedMember, setSelectedMember] = useState<WorkspaceMember | null>(null)
-  const [removingMember, setRemovingMember] = useState<WorkspaceMember | null>(null)
+  const [selectedMember, setSelectedMember] = useState<MemberWithProfile | null>(null)
+  const [removingMember, setRemovingMember] = useState<MemberWithProfile | null>(null)
   const [removing, setRemoving] = useState(false)
+
+  // Edit name state
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null)
+  const [editingName, setEditingName] = useState('')
+  const [savingName, setSavingName] = useState(false)
 
   // Invite form state
   const [inviteEmail, setInviteEmail] = useState('')
@@ -73,6 +84,30 @@ export function MembersPage() {
   const [inviteError, setInviteError] = useState('')
 
   useEffect(() => { fetchMembers() }, [workspace.id])
+
+  // Update own last_seen periodically
+  useEffect(() => {
+    if (currentUser) {
+      updateLastSeen()
+      const interval = setInterval(updateLastSeen, 60000) // Every minute
+      return () => clearInterval(interval)
+    }
+  }, [currentUser])
+
+  const updateLastSeen = async () => {
+    if (!currentUser) return
+    await supabase
+      .from('profiles')
+      .update({ last_seen_at: new Date().toISOString() })
+      .eq('id', currentUser.id)
+  }
+
+  const isUserActive = (lastSeenAt: string | null | undefined): boolean => {
+    if (!lastSeenAt) return false
+    const lastSeen = new Date(lastSeenAt).getTime()
+    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000
+    return lastSeen > fiveMinutesAgo
+  }
 
   const fetchMembers = async () => {
     setLoading(true)
@@ -86,7 +121,7 @@ export function MembersPage() {
       const uniqueUserIds = [...new Set(data.map((m: any) => m.user_id))]
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, email, full_name')
+        .select('id, email, full_name, last_seen_at')
         .in('id', uniqueUserIds)
 
       const profileMap: Record<string, any> = {}
@@ -99,6 +134,7 @@ export function MembersPage() {
             ...m,
             user_email: p?.email || '',
             user_name: p?.full_name || p?.email?.split('@')[0] || 'User',
+            last_seen_at: p?.last_seen_at || null,
           }
         })
       )
@@ -121,9 +157,6 @@ export function MembersPage() {
     setInviting(true)
     setInviteError('')
 
-    // NOTE: In production this should go through a Supabase Edge Function
-    // that uses the Admin API to create users without needing email confirmation.
-    // Here we use the regular signUp endpoint.
     const { data, error } = await supabase.auth.signUp({
       email: inviteEmail,
       password: invitePassword,
@@ -138,7 +171,6 @@ export function MembersPage() {
       return
     }
 
-    // Add to workspace_members
     const { error: memberErr } = await supabase.from('workspace_members').insert({
       workspace_id: workspace.id,
       user_id: data.user.id,
@@ -181,6 +213,42 @@ export function MembersPage() {
     if (selectedMember?.id === memberId) {
       setSelectedMember((prev) => prev ? { ...prev, [key]: value } : prev)
     }
+  }
+
+  const handleStartEditName = (member: MemberWithProfile) => {
+    setEditingMemberId(member.id)
+    setEditingName(member.user_name || member.user_email?.split('@')[0] || '')
+  }
+
+  const handleSaveName = async (memberId: string) => {
+    if (!editingName.trim()) return
+    setSavingName(true)
+
+    // Find the member to get their user_id
+    const member = members.find(m => m.id === memberId)
+    if (!member) return
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ full_name: editingName.trim() })
+      .eq('id', member.user_id)
+
+    setSavingName(false)
+    if (!error) {
+      setMembers(prev => prev.map(m => 
+        m.id === memberId ? { ...m, user_name: editingName.trim() } : m
+      ))
+      if (selectedMember?.id === memberId) {
+        setSelectedMember(prev => prev ? { ...prev, user_name: editingName.trim() } : prev)
+      }
+    }
+    setEditingMemberId(null)
+    setEditingName('')
+  }
+
+  const handleCancelEditName = () => {
+    setEditingMemberId(null)
+    setEditingName('')
   }
 
   const handleRemoveMember = async () => {
@@ -234,63 +302,121 @@ export function MembersPage() {
                 <div className="w-6 h-6 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
               </div>
             ) : (
-              members.map((m) => (
-                <Card
-                  key={m.id}
-                  className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
-                    selectedMember?.id === m.id
-                      ? 'ring-2 ring-violet-400 shadow-md'
-                      : ''
-                  }`}
-                  onClick={() => setSelectedMember(m.id === selectedMember?.id ? null : m)}
-                  id={`member-card-${m.id}`}
-                >
-                  <CardContent className="flex items-center gap-4 py-4">
-                    <Avatar
-                      email={m.user_email || ''}
-                      name={m.user_name || m.user_email || ''}
-                      size="md"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-semibold text-gray-900 truncate">
-                          {m.user_name || m.user_email?.split('@')[0]}
-                        </p>
-                        {m.role === 'owner' && (
-                          <Crown size={13} className="text-amber-500 flex-shrink-0" />
-                        )}
-                        {m.must_change_password && (
-                          <span className="text-xs bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full">
-                            Must change pw
-                          </span>
+              members.map((m) => {
+                const isActive = isUserActive(m.last_seen_at)
+                const isEditing = editingMemberId === m.id
+
+                return (
+                  <Card
+                    key={m.id}
+                    className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
+                      selectedMember?.id === m.id
+                        ? 'ring-2 ring-violet-400 shadow-md'
+                        : ''
+                    }`}
+                    onClick={() => {
+                      if (!isEditing) {
+                        setSelectedMember(m.id === selectedMember?.id ? null : m)
+                      }
+                    }}
+                    id={`member-card-${m.id}`}
+                  >
+                    <CardContent className="flex items-center gap-4 py-4">
+                      <div className="relative">
+                        <Avatar
+                          email={m.user_email || ''}
+                          name={m.user_name || m.user_email || ''}
+                          size="md"
+                        />
+                        {isActive && (
+                          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-white" title="Active now" />
                         )}
                       </div>
-                      <p className="text-xs text-gray-400 truncate">{m.user_email}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                        m.role === 'owner'
-                          ? 'bg-violet-100 text-violet-700'
-                          : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        {m.role}
-                      </span>
-                      {m.role !== 'owner' && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setRemovingMember(m)
-                          }}
-                          className="p-1.5 text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-lg transition-colors"
-                          id={`remove-member-${m.id}`}
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                      <div className="flex-1 min-w-0">
+                        {isEditing ? (
+                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="text"
+                              value={editingName}
+                              onChange={(e) => setEditingName(e.target.value)}
+                              className="flex-1 px-2 py-1 text-sm rounded-lg border border-violet-300 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSaveName(m.id)
+                                if (e.key === 'Escape') handleCancelEditName()
+                              }}
+                            />
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleSaveName(m.id) }}
+                              className="p-1 text-emerald-500 hover:bg-emerald-50 rounded"
+                              disabled={savingName}
+                            >
+                              <Check size={14} />
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleCancelEditName() }}
+                              className="p-1 text-gray-400 hover:bg-gray-100 rounded"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold text-gray-900 truncate">
+                              {m.user_name || m.user_email?.split('@')[0]}
+                            </p>
+                            {isActive && (
+                              <span className="text-xs text-emerald-500 font-medium">Active</span>
+                            )}
+                            {m.role === 'owner' && (
+                              <Crown size={13} className="text-amber-500 flex-shrink-0" />
+                            )}
+                            {m.must_change_password && (
+                              <span className="text-xs bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full">
+                                Must change pw
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        <p className="text-xs text-gray-400 truncate">{m.user_email}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {!isEditing && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleStartEditName(m)
+                            }}
+                            className="p-1.5 text-gray-300 hover:text-violet-500 hover:bg-violet-50 rounded-lg transition-colors"
+                            title="Edit name"
+                          >
+                            <Pencil size={13} />
+                          </button>
+                        )}
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                          m.role === 'owner'
+                            ? 'bg-violet-100 text-violet-700'
+                            : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          {m.role}
+                        </span>
+                        {m.role !== 'owner' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setRemovingMember(m)
+                            }}
+                            className="p-1.5 text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-lg transition-colors"
+                            id={`remove-member-${m.id}`}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })
             )}
           </div>
 
