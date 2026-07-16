@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useOutletContext, useNavigate } from 'react-router-dom'
 import { Plus, Search, Filter, LayoutGrid, List, Trash2, Pencil, CheckCircle2, Clock, Circle, GripVertical } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
@@ -37,8 +37,11 @@ export function TasksPage() {
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [deletingTask, setDeletingTask] = useState<Task | null>(null)
   const [deleting, setDeleting] = useState(false)
-  const [draggedTask, setDraggedTask] = useState<Task | null>(null)
-  const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null)
+  
+  // Drag state
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null)
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null)
+  const [dropTargetStatus, setDropTargetStatus] = useState<TaskStatus | null>(null)
 
   useEffect(() => { void fetchData() }, [workspace.id])
 
@@ -64,50 +67,87 @@ export function TasksPage() {
     setLoading(false)
   }
 
-  const handleDragStart = (e: React.DragEvent, task: Task) => {
-    setDraggedTask(task)
+  const handleDragStart = (e: React.DragEvent, taskId: string) => {
+    setDraggedTaskId(taskId)
     e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('text/plain', task.id)
+    e.dataTransfer.setData('text/plain', taskId)
   }
 
-  const handleDragOver = (e: React.DragEvent, status: TaskStatus) => {
+  const handleDragOver = (e: React.DragEvent, taskId: string | null, status: TaskStatus) => {
     e.preventDefault()
+    e.stopPropagation()
     e.dataTransfer.dropEffect = 'move'
-    setDragOverColumn(status)
+    setDropTargetId(taskId)
+    setDropTargetStatus(status)
   }
 
-  const handleDragLeave = () => {
-    setDragOverColumn(null)
-  }
-
-  const handleDrop = async (e: React.DragEvent, targetStatus: TaskStatus) => {
+  const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault()
-    setDragOverColumn(null)
+  }
 
-    if (!draggedTask || draggedTask.status === targetStatus) {
-      setDraggedTask(null)
+  const handleDrop = async (e: React.DragEvent, targetTaskId: string | null, targetStatus: TaskStatus) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    if (!draggedTaskId) {
+      setDraggedTaskId(null)
+      setDropTargetId(null)
+      setDropTargetStatus(null)
       return
     }
 
-    // Update task status in database
-    const { error } = await supabase
-      .from('tasks')
-      .update({ status: targetStatus })
-      .eq('id', draggedTask.id)
-    
-    if (!error) {
-      // Update local state
-      setTasks(prev => prev.map(t => 
-        t.id === draggedTask.id ? { ...t, status: targetStatus } : t
-      ))
+    const draggedTask = tasks.find(t => t.id === draggedTaskId)
+    if (!draggedTask) {
+      setDraggedTaskId(null)
+      setDropTargetId(null)
+      setDropTargetStatus(null)
+      return
     }
-    
-    setDraggedTask(null)
+
+    // Calculate new order
+    setTasks(prev => {
+      const taskList = [...prev]
+      const draggedIndex = taskList.findIndex(t => t.id === draggedTaskId)
+      const draggedItem = taskList.splice(draggedIndex, 1)[0]
+      
+      // Update status if moving to different column
+      draggedItem.status = targetStatus
+
+      if (targetTaskId) {
+        // Dropped on another task
+        const targetIndex = taskList.findIndex(t => t.id === targetTaskId)
+        if (targetIndex !== -1) {
+          // Insert before the target
+          taskList.splice(targetIndex, 0, draggedItem)
+        } else {
+          // Append to end
+          taskList.push(draggedItem)
+        }
+      } else {
+        // Dropped on column empty area - append to that status
+        const sameStatusTasks = taskList.filter(t => t.status === targetStatus)
+        const otherTasks = taskList.filter(t => t.status !== targetStatus)
+        sameStatusTasks.push(draggedItem)
+        return [...otherTasks, ...sameStatusTasks]
+      }
+
+      return taskList
+    })
+
+    // Update database if status changed
+    if (draggedTask.status !== targetStatus) {
+      await supabase.from('tasks').update({ status: targetStatus }).eq('id', draggedTaskId)
+    }
+
+    setDraggedTaskId(null)
+    setDropTargetId(null)
+    setDropTargetStatus(null)
   }
 
   const handleDragEnd = () => {
-    setDraggedTask(null)
-    setDragOverColumn(null)
+    setDraggedTaskId(null)
+    setDropTargetId(null)
+    setDropTargetStatus(null)
   }
 
   const handleStatusChange = async (task: Task, done: boolean) => {
@@ -230,18 +270,18 @@ export function TasksPage() {
           <div className="flex gap-4 h-full">
             {STATUS_GROUPS.map(({ status, label, icon, color }) => {
               const colTasks = getColumnTasks(status)
-              const isDragOver = dragOverColumn === status
+              const isDropTarget = dropTargetStatus === status
 
               return (
                 <div
                   key={status}
                   className={cn(
                     "flex-1 min-w-[260px] flex flex-col rounded-2xl transition-colors",
-                    isDragOver && "bg-violet-50"
+                    isDropTarget && "bg-violet-50"
                   )}
-                  onDragOver={(e) => handleDragOver(e, status)}
+                  onDragOver={(e) => handleDragOver(e, null, status)}
                   onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, status)}
+                  onDrop={(e) => handleDrop(e, null, status)}
                 >
                   <div className={`flex items-center gap-2 mb-3 ${color}`}>
                     {icon}
@@ -249,73 +289,82 @@ export function TasksPage() {
                     <span className="text-xs bg-gray-100 text-gray-500 rounded-full px-2 py-0.5 ml-auto">{colTasks.length}</span>
                   </div>
                   <div className="flex-1 bg-gray-50/80 rounded-2xl p-3 space-y-2 overflow-y-auto scrollbar-thin">
-                    {colTasks.map((task) => (
-                      <Card
-                        key={task.id}
-                        className={cn(
-                          "p-3 cursor-grab active:cursor-grabbing transition-all select-none",
-                          draggedTask?.id === task.id && "opacity-50"
-                        )}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, task)}
-                        onDragEnd={handleDragEnd}
-                        onClick={() => navigate(`/workspace/${workspace.id}/tasks/${task.id}`)}
-                      >
-                        <div className="flex items-start gap-2">
-                          <GripVertical size={14} className="mt-0.5 text-gray-300" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-800 leading-snug">{task.title}</p>
-                            {task.project_label && task.project_color && (
-                              <span
-                                className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium"
-                                style={{
-                                  backgroundColor: `${task.project_color}20`,
-                                  color: task.project_color,
-                                }}
-                              >
-                                {task.project_label}
-                              </span>
-                            )}
-                            {task.due_date && (
-                              <p className="text-xs text-gray-400 mt-1">
-                                Due: {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            {(canEdit || canDelete) && (
-                              <div className="flex gap-1">
-                                {canEdit && (
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); setEditingTask(task); setShowTaskModal(true) }}
-                                    className="p-1 text-gray-300 hover:text-violet-500 transition-colors"
+                    {colTasks.map((task) => {
+                      const isDragging = draggedTaskId === task.id
+                      const isDropHere = dropTargetId === task.id && dropTargetStatus === status
+
+                      return (
+                        <Card
+                          key={task.id}
+                          className={cn(
+                            "transition-all select-none",
+                            isDragging && "opacity-50"
+                          )}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, task.id)}
+                          onDragEnd={handleDragEnd}
+                          onDragOver={(e) => handleDragOver(e, task.id, status)}
+                          onDrop={(e) => handleDrop(e, task.id, status)}
+                          onClick={() => navigate(`/workspace/${workspace.id}/tasks/${task.id}`)}
+                        >
+                          <div className="p-3">
+                            <div className="flex items-start gap-2">
+                              <GripVertical size={14} className="mt-0.5 text-gray-300 cursor-grab" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-800 leading-snug">{task.title}</p>
+                                {task.project_label && task.project_color && (
+                                  <span
+                                    className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium"
+                                    style={{
+                                      backgroundColor: `${task.project_color}20`,
+                                      color: task.project_color,
+                                    }}
                                   >
-                                    <Pencil size={12} />
-                                  </button>
+                                    {task.project_label}
+                                  </span>
                                 )}
-                                {canDelete && (
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); setDeletingTask(task) }}
-                                    className="p-1 text-gray-300 hover:text-red-400 transition-colors"
-                                  >
-                                    <Trash2 size={12} />
-                                  </button>
+                                {task.due_date && (
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    Due: {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                  </p>
                                 )}
                               </div>
-                            )}
+                              <div className="flex items-center gap-1">
+                                {(canEdit || canDelete) && (
+                                  <div className="flex gap-1">
+                                    {canEdit && (
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); setEditingTask(task); setShowTaskModal(true) }}
+                                        className="p-1 text-gray-300 hover:text-violet-500 transition-colors"
+                                      >
+                                        <Pencil size={12} />
+                                      </button>
+                                    )}
+                                    {canDelete && (
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); setDeletingTask(task) }}
+                                        className="p-1 text-gray-300 hover:text-red-400 transition-colors"
+                                      >
+                                        <Trash2 size={12} />
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </Card>
-                    ))}
+                        </Card>
+                      )
+                    })}
                     {colTasks.length === 0 && (
                       <div className={cn(
                         "h-24 flex items-center justify-center border-2 border-dashed rounded-xl transition-colors",
-                        isDragOver ? "border-violet-400 bg-violet-50" : "border-gray-200"
+                        isDropTarget ? "border-violet-400 bg-violet-50" : "border-gray-200"
                       )}>
                         <p className="text-xs text-gray-400">Drop tasks here</p>
                       </div>
                     )}
-                    {canCreate && colTasks.length > 0 && (
+                    {canCreate && (
                       <button onClick={() => { setEditingTask(null); setShowTaskModal(true) }} className="w-full py-2.5 text-xs text-gray-400 hover:text-violet-600 hover:bg-white rounded-xl transition-colors flex items-center justify-center gap-1.5" id={`kanban-add-${status}`}>
                         <Plus size={13} /> Add task
                       </button>
