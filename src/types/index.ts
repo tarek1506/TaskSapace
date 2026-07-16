@@ -62,6 +62,7 @@ export interface MemberProfile {
   email: string
   name: string
   avatar_color: string
+  avatar_url?: string | null
 }
 
 // ─── UI / App Types ───────────────────────────────────────────────────────────
@@ -116,4 +117,27 @@ export const STATUS_COLORS: Record<TaskStatus, string> = {
   todo: '#94A3B8',
   in_progress: '#FBBF24',
   done: '#34D399',
+}
+
+export interface AppNotification {
+  id: string
+  workspace_id: string
+  user_id: string
+  task_id: string | null
+  action_type: 'task_created' | 'task_updated' | 'task_deleted' | 'comment_added'
+  details: {
+    task_title?: string
+    task_id?: string
+    status_changed?: boolean
+    old_status?: string
+    new_status?: string
+    title_changed?: boolean
+    old_title?: string
+    new_title?: string
+    comment_preview?: string
+  }
+  created_at: string
+  // Joined fields
+  user_name?: string
+  user_email?: string
 }

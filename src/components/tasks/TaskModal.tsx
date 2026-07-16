@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
-import { X, Calendar, Tag, Users } from 'lucide-react'
+import { X, Tag, Users } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Input, Textarea } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { StatusBadge } from '@/components/ui/Badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
+import { DatePicker } from '@/components/ui/DatePicker'
+import { cn } from '@/lib/utils'
 import { PROJECT_COLORS } from '@/types'
 import type { Task, WorkspaceMember, TaskStatus } from '@/types'
 
@@ -136,31 +139,40 @@ export function TaskModal({
 
         <div className="grid grid-cols-2 gap-4">
           {/* Status */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700">Status</label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as TaskStatus)}
-              disabled={!canEdit}
-              className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:bg-white transition-all"
-              id="task-status"
-            >
-              {STATUS_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
+          <Select value={status} onValueChange={(val) => setStatus(val as TaskStatus)} disabled={!canEdit}>
+            <SelectTrigger label="Status" id="task-status">
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      'w-2 h-2 rounded-full',
+                      option.value === 'todo' && 'bg-gray-400',
+                      option.value === 'in_progress' && 'bg-amber-500',
+                      option.value === 'done' && 'bg-green-500'
+                    )} />
+                    {option.label}
+                  </div>
+                </SelectItem>
               ))}
-            </select>
-          </div>
+            </SelectContent>
+          </Select>
 
           {/* Due Date */}
-          <Input
-            label="Due Date"
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            disabled={!canEdit}
-            leftIcon={<Calendar size={14} />}
-            id="task-due-date"
-          />
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-gray-700">Due Date</label>
+            <div className="relative">
+              <DatePicker
+                value={dueDate}
+                onChange={setDueDate}
+                placeholder="Set due date"
+                disabled={!canEdit}
+                id="task-due-date"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Project Label */}

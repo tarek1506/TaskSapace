@@ -3,6 +3,7 @@ import { Outlet, useParams, useNavigate } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { NotificationProvider } from '@/contexts/NotificationContext'
 import type { Workspace, WorkspaceMember } from '@/types'
 
 export function WorkspaceLayout() {
@@ -61,7 +62,9 @@ export function WorkspaceLayout() {
           isOwner={isOwner}
         />
         <main className="flex-1 flex flex-col overflow-hidden">
-          <Outlet context={{ workspace, member, isOwner }} />
+          <NotificationProvider workspaceId={workspace.id}>
+            <Outlet context={{ workspace, member, isOwner }} />
+          </NotificationProvider>
         </main>
       </div>
     </div>

@@ -6,6 +6,7 @@ interface AvatarProps {
   user?: MemberProfile | null
   email?: string
   name?: string
+  src?: string | null
   size?: 'xs' | 'sm' | 'md' | 'lg'
   className?: string
 }
@@ -17,10 +18,37 @@ const sizeMap = {
   lg: 'w-12 h-12 text-base',
 }
 
-export function Avatar({ user, email, name, size = 'md', className }: AvatarProps) {
+export function Avatar({ user, email, name, src, size = 'md', className }: AvatarProps) {
   const displayName = user?.name || name || user?.email || email || ''
   const initials = getInitials(displayName)
   const color = user?.avatar_color || getAvatarColor(displayName)
+  const imageUrl = src || user?.avatar_url
+
+  // Show image if available
+  if (imageUrl) {
+    return (
+      <img
+        src={imageUrl}
+        alt={displayName}
+        className={cn(
+          'rounded-full ring-2 ring-white flex-shrink-0 object-cover',
+          sizeMap[size],
+          className
+        )}
+        title={displayName}
+        onError={(e) => {
+          // Fallback to initials if image fails to load
+          const target = e.target as HTMLImageElement
+          target.style.display = 'none'
+          const parent = target.parentElement
+          if (parent) {
+            parent.style.backgroundColor = color
+            parent.innerHTML = initials
+          }
+        }}
+      />
+    )
+  }
 
   return (
     <div

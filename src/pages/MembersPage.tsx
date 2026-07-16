@@ -78,23 +78,29 @@ export function MembersPage() {
     setLoading(true)
     const { data } = await supabase
       .from('workspace_members')
-      .select(`
-        *,
-        profiles:user_id (
-          email,
-          full_name
-        )
-      `)
+      .select('*')
       .eq('workspace_id', workspace.id)
       .order('joined_at', { ascending: true })
 
-    if (data) {
+    if (data && data.length > 0) {
+      const uniqueUserIds = [...new Set(data.map((m: any) => m.user_id))]
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .in('id', uniqueUserIds)
+
+      const profileMap: Record<string, any> = {}
+      for (const p of profiles || []) profileMap[p.id] = p
+
       setMembers(
-        data.map((m: any) => ({
-          ...m,
-          user_email: m.profiles?.email || '',
-          user_name: m.profiles?.full_name || m.profiles?.email?.split('@')[0] || 'User',
-        }))
+        data.map((m: any) => {
+          const p = profileMap[m.user_id]
+          return {
+            ...m,
+            user_email: p?.email || '',
+            user_name: p?.full_name || p?.email?.split('@')[0] || 'User',
+          }
+        })
       )
     } else {
       setMembers([])

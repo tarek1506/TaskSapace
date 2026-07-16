@@ -38,24 +38,33 @@ export function CommentThread({ taskId }: CommentThreadProps) {
     setLoading(true)
     const { data } = await supabase
       .from('task_comments')
-      .select(`
-        *,
-        profiles:user_id (
-          email,
-          full_name
-        )
-      `)
+      .select('*')
       .eq('task_id', taskId)
       .order('created_at', { ascending: true })
 
-    if (data) {
+    if (data && data.length > 0) {
+      // Fetch profiles separately (cross-schema FK join not supported by PostgREST)
+      const uniqueUserIds = [...new Set(data.map((c: any) => c.user_id))]
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .in('id', uniqueUserIds)
+
+      const profileMap: Record<string, any> = {}
+      for (const p of profiles || []) profileMap[p.id] = p
+
       setComments(
-        data.map((c: any) => ({
-          ...c,
-          user_email: c.profiles?.email || '',
-          user_name: c.profiles?.full_name || c.profiles?.email?.split('@')[0] || 'User',
-        }))
+        data.map((c: any) => {
+          const p = profileMap[c.user_id]
+          return {
+            ...c,
+            user_email: p?.email || '',
+            user_name: p?.full_name || p?.email?.split('@')[0] || 'User',
+          }
+        })
       )
+    } else {
+      setComments([])
     }
     setLoading(false)
   }

@@ -10,6 +10,7 @@ import { TasksPage } from '@/pages/TasksPage'
 import { TaskDetailPage } from '@/pages/TaskDetailPage'
 import { MembersPage } from '@/pages/MembersPage'
 import { SettingsPage } from '@/pages/SettingsPage'
+import { ProfilePage } from '@/pages/ProfilePage'
 
 function App() {
   return (
@@ -39,7 +40,13 @@ function App() {
             <Route path="tasks/:taskId" element={<TaskDetailPage />} />
             <Route path="members" element={<MembersPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="profile" element={<ProfilePage />} />
           </Route>
+
+          {/* Profile route outside workspace */}
+          <Route path="/profile" element={
+            <ProtectedRoute><ProfilePage /></ProtectedRoute>
+          } />
 
           {/* Root redirect */}
           <Route path="/" element={<Navigate to="/workspaces" replace />} />
