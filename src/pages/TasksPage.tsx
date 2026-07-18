@@ -5,6 +5,7 @@ import {
   CheckCircle2, Calendar, GripVertical
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 import { DashboardHeader, GradientButton } from '@/components/dashboard/DashboardWidgets'
 import { Avatar } from '@/components/ui/Avatar'
 import { TaskModal } from '@/components/tasks/TaskModal'
@@ -44,6 +45,7 @@ const PRIORITY_BADGE: Record<TaskPriority, { label: string; icon: string; color:
 export function TasksPage() {
   const { workspace, member, isOwner } = useOutletContext<OutletCtx>()
   const navigate = useNavigate()
+  const { user } = useAuth()
 
   const [tasks, setTasks] = useState<Task[]>([])
   const [members, setMembers] = useState<WorkspaceMember[]>([])
@@ -69,16 +71,21 @@ export function TasksPage() {
 
   const fetchData = async () => {
     setLoading(true)
-    const [tasksRes, membersRes] = await Promise.all([
+    const [tasksRes, membersRes, freshMemberRes] = await Promise.all([
       supabase.from('tasks').select('*').eq('workspace_id', workspace.id).order('order_index', { ascending: true }),
       supabase.from('workspace_members').select('*').eq('workspace_id', workspace.id),
+      supabase.from('workspace_members').select('*').eq('workspace_id', workspace.id).eq('user_id', user?.id || '').single(),
     ])
+
+    const freshMember = freshMemberRes.data || member
 
     if (tasksRes.error && tasksRes.error.message.includes('order_index')) {
       const fallback = await supabase.from('tasks').select('*').eq('workspace_id', workspace.id).order('created_at', { ascending: false })
-      setTasks(fallback.data || [])
+      const fallbackTasks = fallback.data || []
+      setTasks(!isOwner && !freshMember.can_view_all_tasks ? fallbackTasks.filter(t => t.assigned_to?.includes(user?.id || '')) : fallbackTasks)
     } else {
-      setTasks(tasksRes.data || [])
+      const allTasks = tasksRes.data || []
+      setTasks(!isOwner && !freshMember.can_view_all_tasks ? allTasks.filter(t => t.assigned_to?.includes(user?.id || '')) : allTasks)
     }
     if (membersRes.data && membersRes.data.length > 0) {
       const uniqueUserIds = [...new Set(membersRes.data.map((m: any) => m.user_id))]

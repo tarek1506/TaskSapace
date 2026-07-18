@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 import {
   DashboardHeader, TaskList, ProjectCards,
   GanttMini, TimeWidget, GradientButton
@@ -16,6 +17,7 @@ interface OutletCtx {
 
 export function DashboardPage() {
   const { workspace, member, isOwner } = useOutletContext<OutletCtx>()
+  const { user } = useAuth()
 
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [members, setMembers] = useState<WorkspaceMember[]>([])
@@ -25,16 +27,21 @@ export function DashboardPage() {
   const canEdit = isOwner || member.can_edit_task
 
   const fetchData = async () => {
-    const [tasksRes, membersRes] = await Promise.all([
+    const [tasksRes, membersRes, freshMemberRes] = await Promise.all([
       supabase.from('tasks').select('*').eq('workspace_id', workspace.id).order('order_index', { ascending: true }),
       supabase.from('workspace_members').select('*').eq('workspace_id', workspace.id),
+      supabase.from('workspace_members').select('*').eq('workspace_id', workspace.id).eq('user_id', user?.id || '').single(),
     ])
+
+    const freshMember = freshMemberRes.data || member
 
     if (tasksRes.error && tasksRes.error.message.includes('order_index')) {
       const fallback = await supabase.from('tasks').select('*').eq('workspace_id', workspace.id).order('created_at', { ascending: false })
-      setTasks(fallback.data || [])
+      const fallbackTasks = fallback.data || []
+      setTasks(!isOwner && !freshMember.can_view_all_tasks ? fallbackTasks.filter(t => t.assigned_to?.includes(user?.id || '')) : fallbackTasks)
     } else {
-      setTasks(tasksRes.data || [])
+      const allTasks = tasksRes.data || []
+      setTasks(!isOwner && !freshMember.can_view_all_tasks ? allTasks.filter(t => t.assigned_to?.includes(user?.id || '')) : allTasks)
     }
     if (membersRes.data && membersRes.data.length > 0) {
       const uniqueUserIds = [...new Set(membersRes.data.map((m: any) => m.user_id))]
