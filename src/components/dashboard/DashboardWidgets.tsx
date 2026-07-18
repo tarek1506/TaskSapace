@@ -4,7 +4,7 @@ import {
   Search, Plus, Bell, Check,
   Calendar, ChevronDown
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, timeAgo, formatDateTime } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { useNotifications } from '@/contexts/NotificationContext'
 import { Avatar } from '@/components/ui/Avatar'
@@ -95,6 +95,7 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
                       {notifications.map((notif) => (
                         <div key={notif.id} className="px-4 py-3 hover:bg-gray-50 text-xs">
                           <p className="text-gray-600">{getNotificationMessage(notif)}</p>
+                          <p className="text-gray-400 mt-1">{formatDateTime(notif.created_at)}</p>
                         </div>
                       ))}
                     </div>

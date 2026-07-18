@@ -52,3 +52,10 @@ export function timeAgo(iso: string): string {
   const days = Math.floor(hours / 24)
   return `${days}d ago`
 }
+
+export function formatDateTime(iso: string): string {
+  const d = new Date(iso)
+  const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: d.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined })
+  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+  return `${date} at ${time}`
+}
