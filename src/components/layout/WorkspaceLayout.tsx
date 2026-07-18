@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Outlet, useParams, useNavigate } from 'react-router-dom'
-import { Sidebar } from './Sidebar'
+import { DashboardSidebar } from './DashboardSidebar'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { NotificationProvider } from '@/contexts/NotificationContext'
@@ -43,8 +43,8 @@ export function WorkspaceLayout() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-8 h-8 rounded-full border-2 border-violet-600 border-t-transparent animate-spin" />
+      <div className="flex items-center justify-center min-h-screen bg-[#F3F4F6]">
+        <div className="w-8 h-8 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
       </div>
     )
   }
@@ -54,14 +54,14 @@ export function WorkspaceLayout() {
   const isOwner = member.role === 'owner'
 
   return (
-    <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
-      <div className="w-full max-w-[1400px] h-[calc(100vh-2rem)] glass-card rounded-3xl flex overflow-hidden">
-        <Sidebar
+    <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center p-4">
+      <div className="w-full max-w-[1440px] h-[calc(100vh-2rem)] bg-white rounded-[24px] shadow-[0_8px_40px_rgba(0,0,0,0.08)] flex overflow-hidden">
+        <DashboardSidebar
           workspaceId={workspace.id}
           workspaceName={workspace.name}
           isOwner={isOwner}
         />
-        <main className="flex-1 flex flex-col overflow-hidden">
+        <main className="flex-1 flex flex-col overflow-hidden bg-[#F3F4F6]">
           <NotificationProvider workspaceId={workspace.id}>
             <Outlet context={{ workspace, member, isOwner }} />
           </NotificationProvider>

@@ -72,11 +72,18 @@ export function CommentThread({ taskId }: CommentThreadProps) {
   const submitComment = async () => {
     if (!newComment.trim() || !user) return
     setSubmitting(true)
-    await supabase.from('task_comments').insert({
+    const { data } = await supabase.from('task_comments').insert({
       task_id: taskId,
       user_id: user.id,
       content: newComment.trim(),
-    })
+    }).select().single()
+    if (data) {
+      setComments(prev => [...prev, {
+        ...data,
+        user_email: user.email || '',
+        user_name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+      }])
+    }
     setNewComment('')
     setSubmitting(false)
   }

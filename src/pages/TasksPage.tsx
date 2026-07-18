@@ -1,15 +1,16 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useOutletContext, useNavigate } from 'react-router-dom'
-import { Plus, Search, Filter, LayoutGrid, List, Trash2, Pencil, CheckCircle2, Clock, Circle, GripVertical } from 'lucide-react'
+import {
+  Plus, Search, LayoutGrid, LayoutList, Table,
+  CheckCircle2, Calendar, GripVertical
+} from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { TopHeader } from '@/components/layout/Sidebar'
-import { TaskRow } from '@/components/tasks/TaskRow'
+import { DashboardHeader, GradientButton } from '@/components/dashboard/DashboardWidgets'
+import { Avatar } from '@/components/ui/Avatar'
 import { TaskModal } from '@/components/tasks/TaskModal'
 import { ConfirmModal } from '@/components/ui/Modal'
-import { Button } from '@/components/ui/Button'
-import { Card, CardContent } from '@/components/ui/Card'
 import { cn } from '@/lib/utils'
-import type { Workspace, WorkspaceMember, Task, TaskStatus, ViewMode } from '@/types'
+import type { Workspace, WorkspaceMember, Task, TaskStatus, TaskPriority } from '@/types'
 
 interface OutletCtx {
   workspace: Workspace
@@ -17,11 +18,28 @@ interface OutletCtx {
   isOwner: boolean
 }
 
-const STATUS_GROUPS: { status: TaskStatus; label: string; icon: React.ReactNode; color: string }[] = [
-  { status: 'todo', label: 'To Do', icon: <Circle size={14} />, color: 'text-gray-500' },
-  { status: 'in_progress', label: 'In Progress', icon: <Clock size={14} />, color: 'text-amber-500' },
-  { status: 'done', label: 'Done', icon: <CheckCircle2 size={14} />, color: 'text-emerald-500' },
+type ViewMode = 'board' | 'table' | 'list'
+
+const TABS: { id: ViewMode; label: string; icon: React.ReactNode }[] = [
+  { id: 'board', label: 'Board', icon: <LayoutGrid size={14} /> },
+  { id: 'table', label: 'Table', icon: <Table size={14} /> },
+  { id: 'list', label: 'List', icon: <LayoutList size={14} /> },
 ]
+
+const COLUMNS: { status: TaskStatus; label: string; dotColor: string }[] = [
+  { status: 'todo', label: 'To Do', dotColor: 'bg-blue-500' },
+  { status: 'in_progress', label: 'In Progress', dotColor: 'bg-amber-500' },
+  { status: 'done', label: 'Done', dotColor: 'bg-emerald-500' },
+]
+
+const AVATAR_COLORS = ['bg-pink-400', 'bg-purple-400', 'bg-blue-400', 'bg-teal-400', 'bg-emerald-400', 'bg-indigo-400', 'bg-amber-400', 'bg-rose-400']
+
+const PRIORITY_BADGE: Record<TaskPriority, { label: string; icon: string; color: string; bg: string } | null> = {
+  high: { label: 'High', icon: '↑', color: 'text-pink-600', bg: 'bg-pink-50' },
+  medium: { label: 'Medium', icon: '→', color: 'text-amber-600', bg: 'bg-amber-50' },
+  low: { label: 'Low', icon: '↓', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  none: null,
+}
 
 export function TasksPage() {
   const { workspace, member, isOwner } = useOutletContext<OutletCtx>()
@@ -30,36 +48,46 @@ export function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [members, setMembers] = useState<WorkspaceMember[]>([])
   const [loading, setLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<ViewMode>('kanban')
+  const [viewMode, setViewMode] = useState<ViewMode>('board')
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all')
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [deletingTask, setDeletingTask] = useState<Task | null>(null)
   const [deleting, setDeleting] = useState(false)
-  
-  // Drag state
-  const [draggedTaskIdState, setDraggedTaskId] = useState<string | null>(null)
-  const [dropTargetId, setDropTargetId] = useState<string | null>(null)
-  const [dropTargetStatus, setDropTargetStatus] = useState<TaskStatus | null>(null)
 
-  useEffect(() => { void fetchData() }, [workspace.id])
+  // Drag state
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null)
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null)
+  const [dropBefore, setDropBefore] = useState(true)
+
+  const canCreate = isOwner || member.can_create_task
+  const canEdit = isOwner || member.can_edit_task
+
+  const profileMap = useMemo(() => new Map(members.map(m => [m.user_id, m])), [members])
+
+  useEffect(() => { fetchData() }, [workspace.id])
 
   const fetchData = async () => {
     setLoading(true)
     const [tasksRes, membersRes] = await Promise.all([
-      supabase.from('tasks').select('*').eq('workspace_id', workspace.id).order('created_at', { ascending: false }),
+      supabase.from('tasks').select('*').eq('workspace_id', workspace.id).order('order_index', { ascending: true }),
       supabase.from('workspace_members').select('*').eq('workspace_id', workspace.id),
     ])
-    setTasks(tasksRes.data || [])
+
+    if (tasksRes.error && tasksRes.error.message.includes('order_index')) {
+      const fallback = await supabase.from('tasks').select('*').eq('workspace_id', workspace.id).order('created_at', { ascending: false })
+      setTasks(fallback.data || [])
+    } else {
+      setTasks(tasksRes.data || [])
+    }
     if (membersRes.data && membersRes.data.length > 0) {
       const uniqueUserIds = [...new Set(membersRes.data.map((m: any) => m.user_id))]
-      const { data: profiles } = await supabase.from('profiles').select('id, email, full_name').in('id', uniqueUserIds)
-      const profileMap: Record<string, any> = {}
-      for (const p of profiles || []) profileMap[p.id] = p
+      const { data: profiles } = await supabase.from('profiles').select('id, email, full_name, avatar_url').in('id', uniqueUserIds)
+      const pMap: Record<string, any> = {}
+      for (const p of profiles || []) pMap[p.id] = p
       setMembers(membersRes.data.map((m: any) => {
-        const p = profileMap[m.user_id]
-        return { ...m, user_email: p?.email || '', user_name: p?.full_name || p?.email?.split('@')[0] || 'User' }
+        const p = pMap[m.user_id]
+        return { ...m, user_email: p?.email || '', user_name: p?.full_name || p?.email?.split('@')[0] || 'User', user_avatar_url: p?.avatar_url || null }
       }))
     } else {
       setMembers([])
@@ -71,125 +99,76 @@ export function TasksPage() {
     setDraggedTaskId(taskId)
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('application/x-task-id', taskId)
-    e.dataTransfer.setData('text/plain', taskId)
   }
 
-  const handleDragOver = (e: React.DragEvent, taskId: string | null, status: TaskStatus) => {
+  const handleCardDragOver = (e: React.DragEvent, taskId: string) => {
     e.preventDefault()
     e.stopPropagation()
     e.dataTransfer.dropEffect = 'move'
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const midY = rect.top + rect.height / 2
+    const before = e.clientY < midY
     setDropTargetId(taskId)
-    setDropTargetStatus(status)
+    setDropBefore(before)
   }
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const handleColumnDragOver = (e: React.DragEvent) => {
     e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
   }
 
-  const handleDrop = async (e: React.DragEvent, targetTaskId: string | null, targetStatus: TaskStatus) => {
-    e.preventDefault()
-    e.stopPropagation()
+  const handleDragLeave = (e: React.DragEvent) => { e.preventDefault() }
 
-    // Use dataTransfer for reliability (fallback to state)
-    const droppedTaskId = e.dataTransfer.getData('application/x-task-id') || draggedTaskIdState
-    
-    if (!droppedTaskId) {
-      console.error('[DragDrop] No task ID available')
-      setDraggedTaskId(null)
-      setDropTargetId(null)
-      setDropTargetStatus(null)
-      return
-    }
+  const handleDrop = async (e: React.DragEvent, targetStatus: TaskStatus) => {
+    e.preventDefault()
+    const droppedTaskId = e.dataTransfer.getData('application/x-task-id') || draggedTaskId
+    if (!droppedTaskId) { resetDrag(); return }
 
     const draggedTask = tasks.find(t => t.id === droppedTaskId)
-    if (!draggedTask) {
-      console.error('[DragDrop] Task not found in local state:', droppedTaskId)
-      setDraggedTaskId(null)
-      setDropTargetId(null)
-      setDropTargetStatus(null)
-      return
+    if (!draggedTask) { resetDrag(); return }
+
+    const colTasks = tasks
+      .filter(t => t.status === targetStatus && t.id !== droppedTaskId)
+      .sort((a, b) => a.order_index - b.order_index)
+
+    let insertIndex = colTasks.length
+    if (dropTargetId && dropTargetId !== droppedTaskId) {
+      const targetIdx = colTasks.findIndex(t => t.id === dropTargetId)
+      if (targetIdx !== -1) insertIndex = dropBefore ? targetIdx : targetIdx + 1
     }
 
-    const originalStatus = draggedTask.status
-    const statusChanged = originalStatus !== targetStatus
+    const newOrder = colTasks.map((t, i) => ({ id: t.id, order_index: i >= insertIndex ? i + 1 : i }))
+    newOrder.push({ id: droppedTaskId, order_index: insertIndex })
 
-    console.log('[DragDrop] Drop detected:', {
-      taskId: droppedTaskId,
-      originalStatus,
-      targetStatus,
-      statusChanged,
-      workspaceId: workspace.id,
-      taskWorkspaceId: draggedTask.workspace_id
-    })
+    const statusChanged = draggedTask.status !== targetStatus
 
-    // Update database FIRST (important for persistence)
     if (statusChanged) {
-      console.log('[DragDrop] Attempting database update...')
-      const { data, error, status } = await supabase
-        .from('tasks')
-        .update({ status: targetStatus })
-        .eq('id', droppedTaskId)
-        .select()
-        .single()
-      
-      console.log('[DragDrop] Database response:', { data, error, status })
-      
-      if (error) {
-        console.error('[DragDrop] Failed to update task status:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        })
-      } else if (!data) {
-        console.warn('[DragDrop] Update returned no data - possible RLS block')
-      } else {
-        console.log('[DragDrop] Update successful:', data)
-      }
+      const { error } = await supabase.from('tasks').update({ status: targetStatus }).eq('id', droppedTaskId)
+      if (error) { console.error('Failed to update task status:', error); resetDrag(); return }
     }
 
-    // Then update local state
+    const orderUpdates = newOrder.map(({ id, order_index }) =>
+      supabase.from('tasks').update({ order_index }).eq('id', id)
+    )
+    await Promise.allSettled(orderUpdates)
+
     setTasks(prev => {
-      const taskList = [...prev]
-      const draggedIndex = taskList.findIndex(t => t.id === droppedTaskId)
-      if (draggedIndex === -1) return prev
-      
-      const draggedItem = { ...taskList[draggedIndex], status: targetStatus }
-      taskList.splice(draggedIndex, 1)
-      
-      if (targetTaskId) {
-        // Dropped on another task
-        const targetIndex = taskList.findIndex(t => t.id === targetTaskId)
-        if (targetIndex !== -1) {
-          taskList.splice(targetIndex, 0, draggedItem)
-        } else {
-          taskList.push(draggedItem)
-        }
-      } else {
-        // Dropped on column empty area
-        const sameStatusTasks = taskList.filter(t => t.status === targetStatus)
-        const otherTasks = taskList.filter(t => t.status !== targetStatus)
-        sameStatusTasks.push(draggedItem)
-        return [...otherTasks, ...sameStatusTasks]
-      }
-
-      return taskList
+      const updated = prev.map(t => {
+        const ord = newOrder.find(o => o.id === t.id)
+        if (!ord) return t
+        return { ...t, order_index: ord.order_index, ...(t.id === droppedTaskId && statusChanged ? { status: targetStatus } : {}) }
+      })
+      return updated
     })
-
-    setDraggedTaskId(null)
-    setDropTargetId(null)
-    setDropTargetStatus(null)
+    resetDrag()
   }
 
-  const handleDragEnd = () => {
+  const handleDragEnd = () => resetDrag()
+
+  const resetDrag = () => {
     setDraggedTaskId(null)
     setDropTargetId(null)
-    setDropTargetStatus(null)
-  }
-
-  const handleStatusChange = async (task: Task, done: boolean) => {
-    await supabase.from('tasks').update({ status: done ? 'done' : 'todo' }).eq('id', task.id)
-    void fetchData()
+    setDropBefore(true)
   }
 
   const handleDelete = async () => {
@@ -198,212 +177,206 @@ export function TasksPage() {
     await supabase.from('tasks').delete().eq('id', deletingTask.id)
     setDeleting(false)
     setDeletingTask(null)
-    void fetchData()
+    fetchData()
   }
 
-  const canCreate = isOwner || member.can_create_task
-  const canDelete = isOwner || member.can_delete_task
-  const canEdit = isOwner || member.can_edit_task
-
-  const filteredTasks = tasks.filter((t) => {
-    const matchSearch = !search || t.title.toLowerCase().includes(search.toLowerCase())
-    const matchStatus = statusFilter === 'all' || t.status === statusFilter
-    return matchSearch && matchStatus
-  })
+  const filteredTasks = useMemo(
+    () => tasks.filter(t => !search || t.title.toLowerCase().includes(search.toLowerCase())),
+    [tasks, search]
+  )
 
   const getColumnTasks = (status: TaskStatus) =>
-    filteredTasks.filter((t) => t.status === status)
+    filteredTasks.filter(t => t.status === status).sort((a, b) => a.order_index - b.order_index)
+
+  const getAssignees = (assigneeIds: string[]) =>
+    assigneeIds.map((uid, i) => {
+      const m = profileMap.get(uid)
+      const name = m?.user_name || m?.user_email || 'U'
+      return {
+        user_id: uid,
+        name,
+        email: m?.user_email || '',
+        avatar_url: m?.user_avatar_url || null,
+        color: AVATAR_COLORS[i % AVATAR_COLORS.length],
+      }
+    })
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      <TopHeader
-        title="Tasks"
-        subtitle={`${tasks.length} total tasks`}
-        actions={
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <DashboardHeader title={workspace.name} />
+
+      <div className="flex-1 overflow-y-auto scrollbar-thin px-8 pb-8">
+        {/* Toolbar */}
+        <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
-            <div className="flex items-center bg-gray-100 rounded-full p-1">
-              <button onClick={() => setViewMode('list')} className={cn('p-1.5 rounded-full transition-colors', viewMode === 'list' ? 'bg-white shadow-sm text-violet-600' : 'text-gray-400 hover:text-gray-600')} id="btn-list-view">
-                <List size={14} />
-              </button>
-              <button onClick={() => setViewMode('kanban')} className={cn('p-1.5 rounded-full transition-colors', viewMode === 'kanban' ? 'bg-white shadow-sm text-violet-600' : 'text-gray-400 hover:text-gray-600')} id="btn-kanban-view">
-                <LayoutGrid size={14} />
-              </button>
-            </div>
-            {canCreate && (
-              <Button variant="primary" size="md" onClick={() => { setEditingTask(null); setShowTaskModal(true) }} id="btn-new-task">
-                <Plus size={15} /> New Task
-              </Button>
-            )}
+            <h2 className="text-[28px] font-bold text-gray-900">Tasks</h2>
+            <span className="text-[11px] font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{filteredTasks.length}</span>
           </div>
-        }
-      />
 
-      {/* Filters */}
-      <div className="flex items-center gap-3 px-6 py-3 border-b border-gray-100 bg-white/50">
-        <div className="relative flex-1 max-w-sm">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search tasks…" className="w-full pl-9 pr-4 py-2 text-sm rounded-full bg-gray-100 border-0 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:bg-white transition-all" id="search-tasks" />
-        </div>
-        <div className="flex items-center gap-1.5">
-          <Filter size={13} className="text-gray-400" />
-          {(['all', 'todo', 'in_progress', 'done'] as const).map((s) => (
-            <button key={s} onClick={() => setStatusFilter(s)} className={cn('text-xs px-3 py-1.5 rounded-full font-medium transition-all', statusFilter === s ? 'bg-violet-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200')} id={`filter-${s}`}>
-              {s === 'all' ? 'All' : s === 'in_progress' ? 'In Progress' : s === 'todo' ? 'To Do' : 'Done'}
-            </button>
-          ))}
-        </div>
-      </div>
+          <div className="flex items-center gap-3">
+            {/* Search */}
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search tasks..."
+                className="w-56 pl-9 pr-4 py-2 text-sm rounded-full bg-gray-100 border-0 focus:outline-none focus:ring-2 focus:ring-purple-200 placeholder-gray-400"
+              />
+            </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-auto scrollbar-thin p-6">
+            {/* View Tabs */}
+            <div className="flex items-center bg-gray-100 rounded-full p-0.5">
+              {TABS.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setViewMode(tab.id)}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition-all',
+                    viewMode === tab.id
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  )}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {canCreate && <GradientButton onClick={() => { setEditingTask(null); setShowTaskModal(true) }} />}
+          </div>
+        </div>
+
+        {/* Content */}
         {loading ? (
           <div className="flex justify-center py-20">
-            <div className="w-7 h-7 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
+            <div className="w-6 h-6 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
           </div>
-        ) : viewMode === 'list' ? (
-          <div className="space-y-6">
-            {STATUS_GROUPS.map(({ status, label, icon, color }) => {
-              const groupTasks = filteredTasks.filter((t) => t.status === status)
-              if (statusFilter !== 'all' && statusFilter !== status) return null
-              return (
-                <div key={status}>
-                  <div className={`flex items-center gap-2 mb-3 ${color}`}>
-                    {icon}
-                    <span className="text-sm font-semibold">{label}</span>
-                    <span className="text-xs bg-gray-100 text-gray-500 rounded-full px-2 py-0.5">{groupTasks.length}</span>
-                  </div>
-                  <Card>
-                    <CardContent className="p-2">
-                      {groupTasks.length === 0 ? (
-                        <p className="text-sm text-gray-400 text-center py-5">No {label.toLowerCase()} tasks</p>
-                      ) : (
-                        <div className="space-y-0.5">
-                          {groupTasks.map((task) => (
-                            <div key={task.id} className="group relative">
-                              <TaskRow task={task} onClick={() => navigate(`/workspace/${workspace.id}/tasks/${task.id}`)} onStatusChange={handleStatusChange} />
-                              <div className="absolute right-14 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-1">
-                                {canEdit && (
-                                  <button onClick={(e) => { e.stopPropagation(); setEditingTask(task); setShowTaskModal(true) }} className="p-1.5 text-gray-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-colors" id={`edit-task-${task.id}`}>
-                                    <Pencil size={13} />
-                                  </button>
-                                )}
-                                {canDelete && (
-                                  <button onClick={(e) => { e.stopPropagation(); setDeletingTask(task) }} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" id={`delete-task-${task.id}`}>
-                                    <Trash2 size={13} />
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              )
-            })}
-          </div>
-        ) : (
-          <div className="flex gap-4 h-full">
-            {STATUS_GROUPS.map(({ status, label, icon, color }) => {
+        ) : viewMode === 'board' ? (
+          <div className="flex gap-4 h-[calc(100%-64px)]">
+            {COLUMNS.map(({ status, label, dotColor }) => {
               const colTasks = getColumnTasks(status)
-              const isDropTarget = dropTargetStatus === status
+              const isDragging = draggedTaskId !== null
 
               return (
                 <div
                   key={status}
-                  className={cn(
-                    "flex-1 min-w-[260px] flex flex-col rounded-2xl transition-colors",
-                    isDropTarget && "bg-violet-50"
-                  )}
-                  onDragOver={(e) => handleDragOver(e, null, status)}
+                  className="flex-1 min-w-[300px] flex flex-col"
+                  onDragOver={handleColumnDragOver}
                   onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, null, status)}
+                  onDrop={(e) => handleDrop(e, status)}
                 >
-                  <div className={`flex items-center gap-2 mb-3 ${color}`}>
-                    {icon}
-                    <span className="text-sm font-semibold">{label}</span>
-                    <span className="text-xs bg-gray-100 text-gray-500 rounded-full px-2 py-0.5 ml-auto">{colTasks.length}</span>
+                  {/* Column Header */}
+                  <div className="flex items-center gap-2 mb-3 px-1">
+                    <div className={cn('w-2 h-2 rounded-full', dotColor)} />
+                    <span className="text-sm font-semibold text-gray-700">{label}</span>
+                    <span className="text-[11px] font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{colTasks.length}</span>
                   </div>
-                  <div className="flex-1 bg-gray-50/80 rounded-2xl p-3 space-y-2 overflow-y-auto scrollbar-thin">
-                    {colTasks.map((task) => {
-                      const isDragging = draggedTaskIdState === task.id
-                      const isDropHere = dropTargetId === task.id && dropTargetStatus === status
+
+                  {/* Column Body */}
+                  <div className={cn(
+                    "flex-1 rounded-2xl p-3 space-y-2 overflow-y-auto scrollbar-thin transition-colors",
+                    isDragging ? 'bg-purple-50/50 ring-1 ring-purple-200' : 'bg-gray-100/80'
+                  )}>
+                    {colTasks.map(task => {
+                      const isBeingDragged = draggedTaskId === task.id
+                      const showDropBefore = dropTargetId === task.id && dropBefore && !isBeingDragged
+                      const showDropAfter = dropTargetId === task.id && !dropBefore && !isBeingDragged
+                      const assignees = getAssignees(task.assigned_to || [])
 
                       return (
-                        <Card
-                          key={task.id}
-                          className={cn(
-                            "transition-all select-none",
-                            isDragging && "opacity-50"
+                        <div key={task.id}>
+                          {showDropBefore && (
+                            <div className="h-0.5 bg-purple-400 rounded-full mb-2 mx-1" />
                           )}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, task.id)}
-                          onDragEnd={handleDragEnd}
-                          onDragOver={(e) => handleDragOver(e, task.id, status)}
-                          onDrop={(e) => handleDrop(e, task.id, status)}
-                          onClick={() => navigate(`/workspace/${workspace.id}/tasks/${task.id}`)}
-                        >
-                          <div className="p-3">
-                            <div className="flex items-start gap-2">
-                              <GripVertical size={14} className="mt-0.5 text-gray-300 cursor-grab" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-800 leading-snug">{task.title}</p>
-                                {task.project_label && task.project_color && (
-                                  <span
-                                    className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium"
-                                    style={{
-                                      backgroundColor: `${task.project_color}20`,
-                                      color: task.project_color,
-                                    }}
-                                  >
-                                    {task.project_label}
-                                  </span>
-                                )}
-                                {task.due_date && (
-                                  <p className="text-xs text-gray-400 mt-1">
-                                    Due: {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                  </p>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1">
-                                {(canEdit || canDelete) && (
-                                  <div className="flex gap-1">
-                                    {canEdit && (
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); setEditingTask(task); setShowTaskModal(true) }}
-                                        className="p-1 text-gray-300 hover:text-violet-500 transition-colors"
-                                      >
-                                        <Pencil size={12} />
-                                      </button>
-                                    )}
-                                    {canDelete && (
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); setDeletingTask(task) }}
-                                        className="p-1 text-gray-300 hover:text-red-400 transition-colors"
-                                      >
-                                        <Trash2 size={12} />
-                                      </button>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
+                          <div
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, task.id)}
+                            onDragEnd={handleDragEnd}
+                            onDragOver={(e) => handleCardDragOver(e, task.id)}
+                            onClick={() => navigate(`/workspace/${workspace.id}/tasks/${task.id}`)}
+                            className={cn(
+                              "bg-white rounded-xl p-4 cursor-grab active:cursor-grabbing transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:border-gray-300 border border-gray-200",
+                              isBeingDragged && "opacity-40 scale-95"
+                            )}
+                          >
+                          {/* Project Label */}
+                          {(task.project_label || PRIORITY_BADGE[task.priority]) && (
+                            <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                              {task.project_label && (
+                                <span
+                                  className="text-[11px] font-medium px-2 py-0.5 rounded-full"
+                                  style={{
+                                    backgroundColor: `${task.project_color || '#8B5CF6'}15`,
+                                    color: task.project_color || '#8B5CF6',
+                                  }}
+                                >
+                                  {task.project_label}
+                                </span>
+                              )}
+                              {PRIORITY_BADGE[task.priority] && (
+                                <span className={cn('inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full', PRIORITY_BADGE[task.priority]!.bg, PRIORITY_BADGE[task.priority]!.color)}>
+                                  {PRIORITY_BADGE[task.priority]!.icon} {PRIORITY_BADGE[task.priority]!.label}
+                                </span>
+                              )}
                             </div>
+                          )}
+
+                          {/* Title */}
+                          <h3 className="text-sm font-semibold text-gray-900 mb-1 leading-snug">{task.title}</h3>
+
+                          {/* Description */}
+                          {task.description && (
+                            <p className="text-xs text-gray-500 mb-3 line-clamp-2">{task.description}</p>
+                          )}
+
+                          {/* Footer */}
+                          <div className="flex items-center justify-between pt-2 mt-1 border-t border-gray-100">
+                            <div className="flex items-center">
+                              {assignees.slice(0, 3).map((a, i) => (
+                                <Avatar
+                                  key={a.user_id}
+                                  email={a.email}
+                                  name={a.name}
+                                  src={a.avatar_url}
+                                  size="xs"
+                                  className={cn('ring-2 ring-white cursor-pointer', i > 0 && '-ml-1')}
+                                />
+                              ))}
+                              {assignees.length > 3 && (
+                                <div className="w-5 h-5 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[7px] font-medium text-gray-500 -ml-1">
+                                  +{assignees.length - 3}
+                                </div>
+                              )}
+                            </div>
+                            {task.due_date && (
+                              <span className="flex items-center gap-1 text-[11px] text-gray-400">
+                                <Calendar size={10} />
+                                {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </span>
+                            )}
                           </div>
-                        </Card>
+                          </div>
+                          {showDropAfter && (
+                            <div className="h-0.5 bg-purple-400 rounded-full mt-2 mx-1" />
+                          )}
+                        </div>
                       )
                     })}
-                    {colTasks.length === 0 && (
-                      <div className={cn(
-                        "h-24 flex items-center justify-center border-2 border-dashed rounded-xl transition-colors",
-                        isDropTarget ? "border-violet-400 bg-violet-50" : "border-gray-200"
-                      )}>
+
+                    {colTasks.length === 0 && !isDragging && (
+                      <div className="h-24 flex items-center justify-center border-2 border-dashed border-gray-200 rounded-xl transition-colors">
                         <p className="text-xs text-gray-400">Drop tasks here</p>
                       </div>
                     )}
+
                     {canCreate && (
-                      <button onClick={() => { setEditingTask(null); setShowTaskModal(true) }} className="w-full py-2.5 text-xs text-gray-400 hover:text-violet-600 hover:bg-white rounded-xl transition-colors flex items-center justify-center gap-1.5" id={`kanban-add-${status}`}>
-                        <Plus size={13} /> Add task
+                      <button
+                        onClick={() => { setEditingTask(null); setShowTaskModal(true) }}
+                        className="w-full py-2.5 text-xs text-gray-400 hover:text-purple-600 hover:bg-white rounded-xl border border-dashed border-gray-200 transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        <Plus size={12} /> Add task
                       </button>
                     )}
                   </div>
@@ -411,11 +384,178 @@ export function TasksPage() {
               )
             })}
           </div>
+        ) : viewMode === 'table' ? (
+          <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden">
+            <table className="w-full">
+              <thead className="border-b border-gray-100">
+                <tr className="text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                  <th className="px-5 py-3">Task</th>
+                  <th className="px-5 py-3">Status</th>
+                  <th className="px-5 py-3">Priority</th>
+                  <th className="px-5 py-3">Assignees</th>
+                  <th className="px-5 py-3">Due Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {filteredTasks.map(task => {
+                  const assignees = getAssignees(task.assigned_to || [])
+                  const statusConf = COLUMNS.find(c => c.status === task.status)
+                  return (
+                    <tr
+                      key={task.id}
+                      className="hover:bg-gray-50/50 cursor-pointer transition-colors"
+                      onClick={() => navigate(`/workspace/${workspace.id}/tasks/${task.id}`)}
+                    >
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-2.5">
+                          <GripVertical size={14} className="text-gray-300 cursor-grab" />
+                          <div>
+                            <span className="text-sm font-medium text-gray-900">{task.title}</span>
+                            {task.project_label && (
+                              <span
+                                className="ml-2 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+                                style={{ backgroundColor: `${task.project_color || '#8B5CF6'}15`, color: task.project_color || '#8B5CF6' }}
+                              >
+                                {task.project_label}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className={cn(
+                          "inline-flex items-center gap-1.5 text-xs font-medium",
+                          task.status === 'done' && "text-emerald-600",
+                          task.status === 'in_progress' && "text-amber-600",
+                          task.status === 'todo' && "text-blue-600"
+                        )}>
+                          <div className={cn("w-1.5 h-1.5 rounded-full", statusConf?.dotColor)} />
+                          {statusConf?.label}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        {PRIORITY_BADGE[task.priority] ? (
+                          <span className={cn('inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full', PRIORITY_BADGE[task.priority]!.bg, PRIORITY_BADGE[task.priority]!.color)}>
+                            {PRIORITY_BADGE[task.priority]!.icon} {PRIORITY_BADGE[task.priority]!.label}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-gray-400">–</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center">
+                          {assignees.slice(0, 3).map((a, i) => (
+                            <Avatar
+                              key={a.user_id}
+                              email={a.email}
+                              name={a.name}
+                              src={a.avatar_url}
+                              size="xs"
+                              className={cn('ring-2 ring-white cursor-pointer', i > 0 && '-ml-1')}
+                            />
+                          ))}
+                          {assignees.length > 3 && (
+                            <div className="w-5 h-5 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[7px] font-medium text-gray-500 -ml-1">
+                              +{assignees.length - 3}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        {task.due_date && (
+                          <span className="text-xs text-gray-500">
+                            {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+            {filteredTasks.length === 0 && (
+              <div className="text-center py-12 text-gray-400">
+                <CheckCircle2 size={32} className="mx-auto mb-2 opacity-30" />
+                <p className="text-sm">No tasks found</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden divide-y divide-gray-50">
+            {filteredTasks.map(task => {
+              const assignees = getAssignees(task.assigned_to || [])
+              const statusConf = COLUMNS.find(c => c.status === task.status)
+              return (
+                <div
+                  key={task.id}
+                  className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50/50 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/workspace/${workspace.id}/tasks/${task.id}`)}
+                >
+                  <GripVertical size={14} className="text-gray-300 cursor-grab shrink-0" />
+                  <div className={cn("w-2 h-2 rounded-full shrink-0", statusConf?.dotColor)} />
+                  <span className="flex-1 text-sm font-medium text-gray-900 truncate">{task.title}</span>
+                  {task.project_label && (
+                    <span
+                      className="text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0"
+                      style={{ backgroundColor: `${task.project_color || '#8B5CF6'}15`, color: task.project_color || '#8B5CF6' }}
+                    >
+                      {task.project_label}
+                    </span>
+                  )}
+                  {PRIORITY_BADGE[task.priority] && (
+                    <span className={cn('inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0', PRIORITY_BADGE[task.priority]!.bg, PRIORITY_BADGE[task.priority]!.color)}>
+                      {PRIORITY_BADGE[task.priority]!.icon} {PRIORITY_BADGE[task.priority]!.label}
+                    </span>
+                  )}
+                  <div className="flex items-center shrink-0">
+                    {assignees.slice(0, 2).map((a, i) => (
+                      <Avatar
+                        key={a.user_id}
+                        email={a.email}
+                        name={a.name}
+                        src={a.avatar_url}
+                        size="xs"
+                        className={cn('ring-2 ring-white cursor-pointer', i > 0 && '-ml-1')}
+                      />
+                    ))}
+                  </div>
+                  {task.due_date && (
+                    <span className="text-xs text-gray-400 w-16 text-right shrink-0">
+                      {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
+                  )}
+                </div>
+              )
+            })}
+            {filteredTasks.length === 0 && (
+              <div className="text-center py-12 text-gray-400">
+                <CheckCircle2 size={32} className="mx-auto mb-2 opacity-30" />
+                <p className="text-sm">No tasks found</p>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
-      <TaskModal open={showTaskModal} onClose={() => { setShowTaskModal(false); setEditingTask(null) }} workspaceId={workspace.id} task={editingTask} members={members} canEdit={canEdit || canCreate} onSaved={fetchData} />
-      <ConfirmModal open={!!deletingTask} onClose={() => setDeletingTask(null)} onConfirm={handleDelete} title="Delete Task" description={`Are you sure you want to delete "${deletingTask?.title}"? This action cannot be undone.`} confirmLabel="Delete" danger loading={deleting} />
+      <TaskModal
+        open={showTaskModal}
+        onClose={() => { setShowTaskModal(false); setEditingTask(null) }}
+        workspaceId={workspace.id}
+        task={editingTask}
+        members={members}
+        canEdit={canEdit || canCreate}
+        onSaved={() => { setShowTaskModal(false); setEditingTask(null); fetchData() }}
+      />
+      <ConfirmModal
+        open={!!deletingTask}
+        onClose={() => setDeletingTask(null)}
+        onConfirm={handleDelete}
+        title="Delete Task"
+        description={`Are you sure you want to delete "${deletingTask?.title}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        danger
+        loading={deleting}
+      />
     </div>
   )
 }

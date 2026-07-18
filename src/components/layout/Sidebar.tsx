@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { NavLink, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import {
-  LayoutDashboard, CheckSquare, Users, Settings, LogOut,
-  ChevronLeft, ChevronRight, Plus, Zap, Bell, CheckCheck, User
+  LayoutDashboard, Inbox, ChevronDown, Plus, Settings, HelpCircle, Star,
+  User, GraduationCap, Briefcase, Box, Search, Bell
 } from 'lucide-react'
-import { cn, timeAgo } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { Avatar } from '@/components/ui/Avatar'
 import { useNotifications } from '@/contexts/NotificationContext'
@@ -13,175 +13,357 @@ import type { AppNotification } from '@/types'
 interface SidebarProps {
   workspaceId: string
   workspaceName: string
-  isOwner: boolean
 }
 
 interface NavItem {
   icon: React.ReactNode
   label: string
-  to: string
   id: string
+  badge?: number
 }
 
-export function Sidebar({ workspaceId, workspaceName, isOwner }: SidebarProps) {
-  const [collapsed, setCollapsed] = useState(false)
-  const { user, signOut, profile } = useAuth()
-  const navigate = useNavigate()
+interface GroupItem {
+  icon: React.ReactNode
+  iconBg: string
+  label: string
+  id: string
+  badge?: number
+}
 
-  const navItems: NavItem[] = [
-    {
-      icon: <LayoutDashboard size={18} />,
-      label: 'Dashboard',
-      to: `/workspace/${workspaceId}/dashboard`,
-      id: 'nav-dashboard',
-    },
-    {
-      icon: <CheckSquare size={18} />,
-      label: 'Tasks',
-      to: `/workspace/${workspaceId}/tasks`,
-      id: 'nav-tasks',
-    },
-    ...(isOwner
-      ? [
-          {
-            icon: <Users size={18} />,
-            label: 'Members',
-            to: `/workspace/${workspaceId}/members`,
-            id: 'nav-members',
-          },
-        ]
-      : []),
-    {
-      icon: <Settings size={18} />,
-      label: 'Settings',
-      to: `/workspace/${workspaceId}/settings`,
-      id: 'nav-settings',
-    },
+const PERSONAL_ITEMS: GroupItem[] = [
+  { icon: <User size={14} />, iconBg: 'bg-blue-100 text-blue-600', label: 'My Tasks', id: 'my-tasks' },
+  { icon: <GraduationCap size={14} />, iconBg: 'bg-amber-100 text-amber-600', label: 'Learning', id: 'learning' },
+]
+
+const WORKSPACE_ITEMS: GroupItem[] = [
+  { icon: <Briefcase size={14} />, iconBg: 'bg-violet-100 text-violet-600', label: 'Design', id: 'ws-design' },
+  { icon: <Box size={14} />, iconBg: 'bg-emerald-100 text-emerald-600', label: 'Backend API', id: 'ws-backend' },
+  { icon: <GraduationCap size={14} />, iconBg: 'bg-rose-100 text-rose-600', label: 'Marketing', id: 'ws-marketing' },
+  { icon: <Box size={14} />, iconBg: 'bg-orange-100 text-orange-600', label: 'Mobile App', id: 'ws-mobile', badge: 3 },
+  { icon: <Search size={14} />, iconBg: 'bg-cyan-100 text-cyan-600', label: 'Research', id: 'ws-research' },
+  { icon: <User size={14} />, iconBg: 'bg-indigo-100 text-indigo-600', label: 'HR', id: 'ws-hr' },
+]
+
+export function Sidebar(_props: SidebarProps) {
+  const { user, profile } = useAuth()
+  const [activeItem, setActiveItem] = useState('nav-dashboard')
+
+  const primaryNav: NavItem[] = [
+    { icon: <LayoutDashboard size={16} />, label: 'Dashboard', id: 'nav-dashboard' },
+    { icon: <Inbox size={16} />, label: 'Inbox', id: 'nav-inbox', badge: 5 },
   ]
 
-  const handleSignOut = async () => {
-    await signOut()
-    navigate('/login')
-  }
+  const bottomLinks = [
+    { icon: <Settings size={15} />, label: 'Settings', id: 'settings' },
+    { icon: <Star size={15} />, label: 'Preferences', id: 'preferences' },
+    { icon: <HelpCircle size={15} />, label: 'Helps', id: 'helps' },
+  ]
 
-  const handleProfileClick = () => {
-    navigate(`/workspace/${workspaceId}/profile`)
-  }
+  const userName = profile?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'
+  const userEmail = user?.email || ''
+  const initials = userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
 
   return (
-    <aside
-      className={cn(
-        'flex flex-col h-full bg-white border-r border-gray-100 transition-all duration-300 relative',
-        collapsed ? 'w-16' : 'w-60'
-      )}
-    >
-      {/* Collapse toggle */}
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-1/2 -translate-y-1/2 z-50 w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-lg hover:bg-gray-50 transition-colors"
-        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        id="sidebar-toggle"
-      >
-        {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
-      </button>
-
-      {/* Logo */}
-      <div className={cn('flex items-center gap-3 px-4 py-5 border-b border-gray-100', collapsed && 'px-3 justify-center')}>
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-violet-200">
-          <Zap size={16} className="text-white" />
+    <aside className="flex flex-col w-[220px] h-full bg-white border-r border-gray-200 shrink-0">
+      {/* User Profile Header */}
+      <div className="flex items-center gap-2.5 px-4 py-3 border-b border-gray-100">
+        <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+          {initials || '?'}
         </div>
-        {!collapsed && (
-          <div className="slide-in">
-            <span className="font-bold text-gray-900 text-base">TaskSpace</span>
-            <p className="text-xs text-gray-400 truncate max-w-[120px]">{workspaceName}</p>
-          </div>
-        )}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-900 truncate leading-tight">{userName}</p>
+          <p className="text-[11px] text-gray-400 truncate leading-tight">{userEmail}</p>
+        </div>
+        <ChevronDown size={14} className="text-gray-400 shrink-0" />
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-thin">
-        {navItems.map((item) => (
-          <NavLink
+      {/* Primary Nav */}
+      <nav className="px-2 pt-3 pb-2 space-y-0.5">
+        {primaryNav.map(item => (
+          <button
             key={item.id}
-            to={item.to}
-            id={item.id}
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
-                isActive
-                  ? 'sidebar-active text-violet-700'
-                  : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800',
-                collapsed && 'justify-center px-2'
-              )
-            }
+            onClick={() => setActiveItem(item.id)}
+            className={cn(
+              'flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-sm transition-colors',
+              activeItem === item.id
+                ? 'bg-gray-100 text-gray-900 font-semibold'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            )}
           >
-            {item.icon}
-            {!collapsed && <span className="slide-in">{item.label}</span>}
-          </NavLink>
+            <span className="text-gray-500">{item.icon}</span>
+            <span className="flex-1 text-left">{item.label}</span>
+            {item.badge && (
+              <span className="text-[11px] font-semibold bg-red-500 text-white px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none">
+                {item.badge}
+              </span>
+            )}
+          </button>
         ))}
       </nav>
 
-      {/* Switch workspace */}
-      {!collapsed && (
-        <div className="px-3 py-2 border-t border-gray-100">
-          <button
-            onClick={() => navigate('/workspaces')}
-            className="flex items-center gap-2 w-full px-3 py-2 text-xs font-medium text-gray-500 hover:text-violet-600 hover:bg-violet-50 rounded-xl transition-colors"
-            id="btn-switch-workspace"
-          >
-            <Plus size={14} />
-            Switch / New Workspace
+      {/* Personal Section */}
+      <div className="px-3 pt-3 pb-1">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Personal</span>
+          <button className="p-0.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 opacity-0 group-hover:opacity-100">
+            <Plus size={12} />
           </button>
         </div>
-      )}
+        <div className="space-y-0.5">
+          {PERSONAL_ITEMS.map(item => (
+            <button
+              key={item.id}
+              onClick={() => setActiveItem(item.id)}
+              className={cn(
+                'flex items-center gap-2.5 w-full px-2.5 py-1.5 rounded-lg text-sm transition-colors',
+                activeItem === item.id
+                  ? 'bg-gray-100 text-gray-900 font-medium'
+                  : 'text-gray-600 hover:bg-gray-50'
+              )}
+            >
+              <div className={cn('w-6 h-6 rounded-md flex items-center justify-center shrink-0', item.iconBg)}>
+                {item.icon}
+              </div>
+              <span className="flex-1 text-left">{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
-      {/* User profile footer */}
-      <div className={cn(
-        'flex items-center gap-3 px-3 py-4 border-t border-gray-100',
-        collapsed && 'justify-center'
-      )}>
-        <button
-          onClick={handleProfileClick}
-          className={cn(
-            'flex items-center gap-3 hover:bg-gray-50 rounded-xl p-1 -m-1 transition-colors flex-1 min-w-0',
-            collapsed && 'justify-center p-1'
-          )}
-          title="View profile"
-          id="btn-user-profile"
-        >
-          <Avatar
-            email={user?.email || ''}
-            name={profile?.full_name || user?.email || ''}
-            src={profile?.avatar_url}
-            size="sm"
-          />
-          {!collapsed && (
-            <div className="flex-1 min-w-0 slide-in text-left">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {profile?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0]}
-              </p>
-              <p className="text-xs text-gray-400 truncate flex items-center gap-1">
-                <User size={10} /> Profile
-              </p>
-            </div>
-          )}
-        </button>
-        {!collapsed && (
-          <button
-            onClick={handleSignOut}
-            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-            title="Sign out"
-            id="btn-signout"
-          >
-            <LogOut size={15} />
+      {/* Workspaces Section */}
+      <div className="px-3 pt-3 pb-1 flex-1 overflow-y-auto scrollbar-thin">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Workspaces</span>
+          <button className="p-0.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100">
+            <Plus size={12} />
           </button>
-        )}
+        </div>
+        <div className="space-y-0.5">
+          {WORKSPACE_ITEMS.map(item => (
+            <button
+              key={item.id}
+              onClick={() => setActiveItem(item.id)}
+              className={cn(
+                'flex items-center gap-2.5 w-full px-2.5 py-1.5 rounded-lg text-sm transition-colors',
+                activeItem === item.id
+                  ? 'bg-gray-100 text-gray-900 font-medium'
+                  : 'text-gray-600 hover:bg-gray-50'
+              )}
+            >
+              <div className={cn('w-6 h-6 rounded-md flex items-center justify-center shrink-0', item.iconBg)}>
+                {item.icon}
+              </div>
+              <span className="flex-1 text-left truncate">{item.label}</span>
+              {item.badge && (
+                <span className="text-[11px] font-semibold bg-red-500 text-white px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none">
+                  {item.badge}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Bottom Utility Links */}
+      <div className="border-t border-gray-100 px-2 py-2 space-y-0.5">
+        {bottomLinks.map(item => (
+          <button
+            key={item.id}
+            className="flex items-center gap-2.5 w-full px-2.5 py-1.5 rounded-lg text-sm text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            {item.icon}
+            <span>{item.label}</span>
+          </button>
+        ))}
       </div>
     </aside>
   )
 }
 
-// ─── Top Header ───────────────────────────────────────────────────────────────
+// ─── Legacy exports (for backward compatibility) ──────────────────────────────
+
+interface Tab {
+  id: string
+  label: string
+  icon: React.ReactNode
+}
+
+interface TabBarProps {
+  tabs: Tab[]
+  activeTab: string
+  onTabChange: (tabId: string) => void
+  actions?: React.ReactNode
+}
+
+export function TabBar({ tabs, activeTab, onTabChange, actions }: TabBarProps) {
+  return (
+    <div className="flex items-center justify-between px-6 border-b border-gray-100">
+      <div className="flex items-center gap-1">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => onTabChange(tab.id)}
+            className={cn(
+              'flex items-center gap-2 px-4 py-3 text-sm border-b-2 transition-colors',
+              activeTab === tab.id
+                ? 'border-gray-900 text-gray-900 font-semibold'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            )}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      {actions}
+    </div>
+  )
+}
+
+interface PageHeaderProps {
+  title: string
+  actions?: React.ReactNode
+}
+
+export function PageHeader({ title, actions }: PageHeaderProps) {
+  return (
+    <div className="flex items-center justify-between px-6 py-4">
+      <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+      {actions}
+    </div>
+  )
+}
+
+interface TopUtilityBarProps {
+  workspaceName: string
+}
+
+export function TopUtilityBar({ workspaceName }: TopUtilityBarProps) {
+  const { user, profile } = useAuth()
+  const { unreadCount, markAllAsRead } = useNotifications()
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false)
+  const { notifications } = useNotifications()
+  const navigate = useNavigate()
+  const { id: workspaceId } = useParams<{ id: string }>()
+
+  const getNotificationMessage = (notif: AppNotification) => {
+    const actor = notif.user_name || notif.user_email?.split('@')[0] || 'Someone'
+    const taskTitle = notif.details.task_title || 'a task'
+    switch (notif.action_type) {
+      case 'task_created':
+        return <span><strong className="text-gray-900">{actor}</strong> created &ldquo;{taskTitle}&rdquo;</span>
+      case 'task_updated':
+        if (notif.details.status_changed) {
+          const statusMap: Record<string, string> = { todo: 'To Do', in_progress: 'In Progress', done: 'Done' }
+          return <span><strong className="text-gray-900">{actor}</strong> moved &ldquo;{taskTitle}&rdquo; to <span className="text-violet-600">{statusMap[notif.details.new_status || 'todo']}</span></span>
+        }
+        return <span><strong className="text-gray-900">{actor}</strong> updated &ldquo;{taskTitle}&rdquo;</span>
+      case 'comment_added':
+        return <span><strong className="text-gray-900">{actor}</strong> commented on &ldquo;{taskTitle}&rdquo;</span>
+      default:
+        return <span>New activity</span>
+    }
+  }
+
+  return (
+    <header className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-100">
+      <div className="flex items-center gap-2 text-sm">
+        <span className="text-gray-500">{workspaceName}</span>
+        <span className="text-gray-300">/</span>
+        <span className="font-medium text-gray-900">Tasks</span>
+      </div>
+      <div className="flex items-center gap-1">
+        <button className="w-9 h-9 rounded-full flex items-center justify-center text-gray-400 hover:text-amber-500 hover:bg-amber-50 transition-colors" title="Favorite">
+          <Star size={16} />
+        </button>
+        <button className="w-9 h-9 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors" title="Share">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/>
+          </svg>
+        </button>
+        <div className="relative">
+          <button
+            onClick={() => { setShowDropdown(!showDropdown); if (!showDropdown && unreadCount > 0) markAllAsRead() }}
+            className={cn(
+              'w-9 h-9 rounded-full flex items-center justify-center transition-colors',
+              showDropdown ? 'bg-violet-50 text-violet-600' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+            )}
+            title="Notifications"
+          >
+            <Bell size={16} />
+            {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
+            )}
+          </button>
+          {showDropdown && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowDropdown(false)} />
+              <div className="absolute right-0 mt-2 w-80 max-h-[400px] overflow-hidden bg-white rounded-xl border border-gray-200 shadow-lg z-50">
+                <div className="px-4 py-3 border-b border-gray-100">
+                  <span className="text-sm font-semibold text-gray-900">Notifications</span>
+                </div>
+                <div className="overflow-y-auto max-h-[340px]">
+                  {notifications.length === 0 ? (
+                    <div className="text-center py-8 text-gray-400">
+                      <Bell size={20} className="mx-auto mb-2 opacity-30" />
+                      <p className="text-xs">No notifications</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-50">
+                      {notifications.map((notif) => (
+                        <div key={notif.id} className="px-4 py-3 hover:bg-gray-50 text-xs">
+                          <p className="text-gray-600">{getNotificationMessage(notif)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+        <div className="relative ml-1">
+          <button
+            onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+            className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            <div className="relative">
+              <Avatar
+                email={user?.email || ''}
+                name={profile?.full_name || user?.email || ''}
+                src={profile?.avatar_url}
+                size="sm"
+              />
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-white" />
+            </div>
+            <span className="text-sm font-medium text-gray-700">
+              {profile?.full_name?.split(' ')[0] || user?.email?.split('@')[0]}
+            </span>
+            <ChevronDown size={12} className="text-gray-400" />
+          </button>
+          {showProfileDropdown && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowProfileDropdown(false)} />
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl border border-gray-200 shadow-lg z-50 overflow-hidden">
+                <button 
+                  onClick={() => { navigate(`/workspace/${workspaceId}/profile`); setShowProfileDropdown(false) }}
+                  className="w-full px-4 py-2.5 text-sm text-left text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Profile
+                </button>
+                <button className="w-full px-4 py-2.5 text-sm text-left text-red-600 hover:bg-red-50 transition-colors">
+                  Sign out
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </header>
+  )
+}
+
 interface TopHeaderProps {
   title: string
   subtitle?: string
@@ -190,10 +372,10 @@ interface TopHeaderProps {
 
 export function TopHeader({ title, subtitle, actions }: TopHeaderProps) {
   const { user, profile } = useAuth()
-  const { notifications, unreadCount, markAllAsRead, loading } = useNotifications()
+  const { unreadCount, markAllAsRead } = useNotifications()
   const [showDropdown, setShowDropdown] = useState(false)
-  const { id: workspaceId } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { id: workspaceId } = useParams<{ id: string }>()
 
   const handleProfileClick = () => {
     if (workspaceId) {
@@ -210,65 +392,6 @@ export function TopHeader({ title, subtitle, actions }: TopHeaderProps) {
     }
   }
 
-  const getNotificationMessage = (notif: AppNotification) => {
-    const actor = notif.user_name || notif.user_email?.split('@')[0] || 'Someone'
-    const taskTitle = notif.details.task_title || 'a task'
-
-    switch (notif.action_type) {
-      case 'task_created':
-        return (
-          <span>
-            <strong className="text-gray-900 font-semibold">{actor}</strong> created task{' '}
-            <span className="text-violet-600 font-medium">"{taskTitle}"</span>
-          </span>
-        )
-      case 'task_updated':
-        if (notif.details.status_changed) {
-          const newStatus = notif.details.new_status || 'todo'
-          const statusMap: Record<string, string> = {
-            todo: 'To Do',
-            in_progress: 'In Progress',
-            done: 'Done',
-          }
-          const statusLabel = statusMap[newStatus] || newStatus
-          return (
-            <span>
-              <strong className="text-gray-900 font-semibold">{actor}</strong> moved{' '}
-              <span className="text-gray-700 font-medium">"{taskTitle}"</span> to{' '}
-              <span className="font-semibold text-violet-600">{statusLabel}</span>
-            </span>
-          )
-        }
-        return (
-          <span>
-            <strong className="text-gray-900 font-semibold">{actor}</strong> updated task{' '}
-            <span className="text-gray-700 font-medium">"{taskTitle}"</span>
-          </span>
-        )
-      case 'task_deleted':
-        return (
-          <span>
-            <strong className="text-gray-900 font-semibold">{actor}</strong> deleted task{' '}
-            <span className="text-red-500 font-medium">"{taskTitle}"</span>
-          </span>
-        )
-      case 'comment_added':
-        return (
-          <span>
-            <strong className="text-gray-900 font-semibold">{actor}</strong> commented on{' '}
-            <span className="text-violet-600 font-medium">"{taskTitle}"</span>
-            {notif.details.comment_preview && (
-              <p className="text-xs text-gray-400 mt-1 italic line-clamp-1">
-                "{notif.details.comment_preview}"
-              </p>
-            )}
-          </span>
-        )
-      default:
-        return <span>Activity in workspace</span>
-    }
-  }
-
   return (
     <header className="flex items-center justify-between px-8 py-5 border-b border-gray-100 bg-white/70 backdrop-blur-sm relative z-30">
       <div>
@@ -277,93 +400,23 @@ export function TopHeader({ title, subtitle, actions }: TopHeaderProps) {
       </div>
       <div className="flex items-center gap-3">
         {actions}
-        
-        {/* Notification Bell with Popover */}
         <div className="relative">
           <button
             onClick={handleToggleDropdown}
-            className={`relative w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 transition-colors ${
-              showDropdown ? 'bg-violet-50 text-violet-600' : 'bg-gray-50 hover:bg-gray-100'
+            className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+              showDropdown ? 'bg-violet-50 text-violet-600' : 'bg-gray-50 hover:bg-gray-100 text-gray-500'
             }`}
-            id="btn-notifications"
             aria-label="Notifications"
           >
             <Bell size={16} />
             {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-violet-600 ring-2 ring-white animate-pulse" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
             )}
           </button>
-
-          {showDropdown && (
-            <>
-              {/* Overlay to close the dropdown on click outside */}
-              <div 
-                className="fixed inset-0 z-45" 
-                onClick={() => setShowDropdown(false)} 
-              />
-              
-              {/* Dropdown Card */}
-              <div className="absolute right-0 mt-2.5 w-80 max-h-[420px] overflow-hidden bg-white/95 backdrop-blur-md rounded-2xl border border-gray-100 shadow-2xl z-50 flex flex-col fade-in">
-                {/* Header */}
-                <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-                  <span className="text-sm font-bold text-gray-800">Notifications</span>
-                  {unreadCount > 0 && (
-                    <button
-                      onClick={markAllAsRead}
-                      className="text-xs text-violet-600 hover:text-violet-700 font-medium flex items-center gap-1"
-                    >
-                      <CheckCheck size={12} /> Mark all read
-                    </button>
-                  )}
-                </div>
-
-                {/* Notifications List */}
-                <div className="flex-1 overflow-y-auto scrollbar-thin max-h-[350px]">
-                  {loading && notifications.length === 0 ? (
-                    <div className="flex justify-center py-10">
-                      <div className="w-5 h-5 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
-                    </div>
-                  ) : notifications.length === 0 ? (
-                    <div className="text-center py-12 px-4 text-gray-400">
-                      <Bell size={24} className="mx-auto mb-2 opacity-30" />
-                      <p className="text-xs">No activity yet in this workspace</p>
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-gray-50">
-                      {notifications.map((notif) => (
-                        <div
-                          key={notif.id}
-                          className="px-4 py-3 hover:bg-violet-50/30 transition-colors flex gap-3 text-left"
-                        >
-                          <Avatar
-                            email={notif.user_email || ''}
-                            name={notif.user_name || notif.user_email || ''}
-                            size="sm"
-                            className="mt-0.5"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs text-gray-600 leading-normal">
-                              {getNotificationMessage(notif)}
-                            </p>
-                            <span className="text-[10px] text-gray-400 mt-1 block">
-                              {timeAgo(notif.created_at)}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
         </div>
-
         <button
           onClick={handleProfileClick}
           className="hover:opacity-80 transition-opacity rounded-full"
-          title="View profile"
-          id="btn-header-profile"
         >
           <Avatar
             email={user?.email || ''}

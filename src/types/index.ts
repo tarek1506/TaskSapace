@@ -25,9 +25,11 @@ export interface WorkspaceMember {
   // Joined fields
   user_email?: string
   user_name?: string
+  user_avatar_url?: string | null
 }
 
 export type TaskStatus = 'todo' | 'in_progress' | 'done'
+export type TaskPriority = 'high' | 'medium' | 'low' | 'none'
 
 export interface Task {
   id: string
@@ -35,12 +37,15 @@ export interface Task {
   title: string
   description: string | null
   status: TaskStatus
+  priority: TaskPriority
   due_date: string | null
+  deadline: string | null
   project_label: string | null
   project_color: string | null
   assigned_to: string[] // array of user_ids
   created_by: string
   created_at: string
+  order_index: number
   // Joined fields
   assignees?: MemberProfile[]
   comments_count?: number

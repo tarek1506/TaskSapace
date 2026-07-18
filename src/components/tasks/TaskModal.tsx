@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DatePicker } from '@/components/ui/DatePicker'
 import { cn } from '@/lib/utils'
 import { PROJECT_COLORS } from '@/types'
-import type { Task, WorkspaceMember, TaskStatus } from '@/types'
+import type { Task, WorkspaceMember, TaskStatus, TaskPriority } from '@/types'
 
 interface TaskModalProps {
   open: boolean
@@ -28,6 +28,13 @@ const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
   { value: 'done', label: 'Done' },
 ]
 
+const PRIORITY_OPTIONS: { value: TaskPriority; label: string; icon: string; color: string }[] = [
+  { value: 'high', label: 'High', icon: '↑', color: 'text-pink-600' },
+  { value: 'medium', label: 'Medium', icon: '→', color: 'text-amber-600' },
+  { value: 'low', label: 'Low', icon: '↓', color: 'text-emerald-600' },
+  { value: 'none', label: 'None', icon: '–', color: 'text-gray-400' },
+]
+
 const COLOR_ENTRIES = Object.entries(PROJECT_COLORS)
 
 export function TaskModal({
@@ -39,7 +46,9 @@ export function TaskModal({
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [status, setStatus] = useState<TaskStatus>('todo')
+  const [priority, setPriority] = useState<TaskPriority>('none')
   const [dueDate, setDueDate] = useState('')
+  const [deadline, setDeadline] = useState('')
   const [projectLabel, setProjectLabel] = useState('')
   const [projectColor, setProjectColor] = useState(PROJECT_COLORS.violet || '#8B5CF6')
   const [assignedTo, setAssignedTo] = useState<string[]>([])
@@ -51,7 +60,9 @@ export function TaskModal({
       setTitle(task.title)
       setDescription(task.description || '')
       setStatus(task.status)
+      setPriority(task.priority || 'none')
       setDueDate(task.due_date ? task.due_date.slice(0, 10) : '')
+      setDeadline(task.deadline ? task.deadline.slice(0, 10) : '')
       setProjectLabel(task.project_label || '')
       setProjectColor(task.project_color || '#8B5CF6')
       setAssignedTo(task.assigned_to || [])
@@ -59,7 +70,9 @@ export function TaskModal({
       setTitle('')
       setDescription('')
       setStatus('todo')
+      setPriority('none')
       setDueDate('')
+      setDeadline('')
       setProjectLabel('')
       setProjectColor('#8B5CF6')
       setAssignedTo([])
@@ -82,7 +95,9 @@ export function TaskModal({
       title: title.trim(),
       description: description.trim() || null,
       status,
+      priority,
       due_date: dueDate || null,
+      deadline: deadline || null,
       project_label: projectLabel.trim() || null,
       project_color: projectLabel.trim() ? projectColor : null,
       assigned_to: assignedTo,
@@ -160,6 +175,23 @@ export function TaskModal({
             </SelectContent>
           </Select>
 
+          {/* Priority */}
+          <Select value={priority} onValueChange={(val) => setPriority(val as TaskPriority)} disabled={!canEdit}>
+            <SelectTrigger label="Priority" id="task-priority">
+              <SelectValue placeholder="Select priority" />
+            </SelectTrigger>
+            <SelectContent>
+              {PRIORITY_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  <div className={cn('flex items-center gap-2', option.color)}>
+                    <span className="text-xs font-bold">{option.icon}</span>
+                    {option.label}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           {/* Due Date */}
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-gray-700">Due Date</label>
@@ -170,6 +202,20 @@ export function TaskModal({
                 placeholder="Set due date"
                 disabled={!canEdit}
                 id="task-due-date"
+              />
+            </div>
+          </div>
+
+          {/* Deadline */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-gray-700">Deadline</label>
+            <div className="relative">
+              <DatePicker
+                value={deadline}
+                onChange={setDeadline}
+                placeholder="Set deadline"
+                disabled={!canEdit}
+                id="task-deadline"
               />
             </div>
           </div>

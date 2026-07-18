@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useOutletContext, useNavigate } from 'react-router-dom'
 import {
-  ArrowLeft, Calendar, Tag, Users, Circle, Clock, CheckCircle2, Pencil, Trash2
+  ArrowLeft, Calendar, Tag, Users, Circle, Clock, CheckCircle2, Pencil, Trash2, ArrowUp, ArrowRight, ArrowDown
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { TopHeader } from '@/components/layout/Sidebar'
@@ -12,8 +12,8 @@ import { Button } from '@/components/ui/Button'
 import { AvatarGroup } from '@/components/ui/Avatar'
 import { ProjectPill, StatusBadge } from '@/components/ui/Badge'
 import { Card, CardContent } from '@/components/ui/Card'
-import { formatDate } from '@/lib/utils'
-import type { Workspace, WorkspaceMember, Task } from '@/types'
+import { cn, formatDate } from '@/lib/utils'
+import type { Workspace, WorkspaceMember, Task, TaskPriority } from '@/types'
 
 interface OutletCtx {
   workspace: Workspace
@@ -87,6 +87,13 @@ export function TaskDetailPage() {
     if (!task) return
     await supabase.from('tasks').update({ status }).eq('id', task.id)
     setTask({ ...task, status })
+  }
+
+  const priorityConfig: Record<TaskPriority, { label: string; icon: React.ReactNode; color: string; bg: string } | null> = {
+    high: { label: 'High', icon: <ArrowUp size={12} />, color: 'text-pink-600', bg: 'bg-pink-50' },
+    medium: { label: 'Medium', icon: <ArrowRight size={12} />, color: 'text-amber-600', bg: 'bg-amber-50' },
+    low: { label: 'Low', icon: <ArrowDown size={12} />, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    none: null,
   }
 
   const canEdit = isOwner || member.can_edit_task || member.can_edit_others_tasks
@@ -178,7 +185,7 @@ export function TaskDetailPage() {
               )}
 
               {/* Meta grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {/* Status quick-change */}
                 <div>
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Status</p>
@@ -214,6 +221,33 @@ export function TaskDetailPage() {
                   <p className="text-sm font-medium text-gray-800">
                     {task.due_date ? formatDate(task.due_date) : '—'}
                   </p>
+                </div>
+
+                {/* Deadline */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                    <span className="flex items-center gap-1.5">
+                      <Clock size={11} /> Deadline
+                    </span>
+                  </p>
+                  <p className={cn(
+                    'text-sm font-medium',
+                    task.deadline ? (new Date(task.deadline) < new Date() && task.status !== 'done' ? 'text-red-600' : 'text-gray-800') : 'text-gray-400'
+                  )}>
+                    {task.deadline ? formatDate(task.deadline) : '—'}
+                  </p>
+                </div>
+
+                {/* Priority */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Priority</p>
+                  {priorityConfig[task.priority] ? (
+                    <span className={cn('inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full', priorityConfig[task.priority]!.bg, priorityConfig[task.priority]!.color)}>
+                      {priorityConfig[task.priority]!.icon} {priorityConfig[task.priority]!.label}
+                    </span>
+                  ) : (
+                    <p className="text-sm text-gray-400">—</p>
+                  )}
                 </div>
 
                 {/* Project */}
