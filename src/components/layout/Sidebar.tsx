@@ -239,11 +239,10 @@ interface TopUtilityBarProps {
 }
 
 export function TopUtilityBar({ workspaceName }: TopUtilityBarProps) {
-  const { user, profile } = useAuth()
-  const { unreadCount, markAllAsRead } = useNotifications()
+  const { user, profile, signOut } = useAuth()
+  const { unreadCount, markAllAsRead, notifications } = useNotifications()
   const [showDropdown, setShowDropdown] = useState(false)
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
-  const { notifications } = useNotifications()
   const navigate = useNavigate()
   const { id: workspaceId } = useParams<{ id: string }>()
 
@@ -286,7 +285,7 @@ export function TopUtilityBar({ workspaceName }: TopUtilityBarProps) {
           <button
             onClick={() => { setShowDropdown(!showDropdown); if (!showDropdown && unreadCount > 0) markAllAsRead() }}
             className={cn(
-              'w-9 h-9 rounded-full flex items-center justify-center transition-colors',
+              'relative w-9 h-9 rounded-full flex items-center justify-center transition-colors',
               showDropdown ? 'bg-violet-50 text-violet-600' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
             )}
             title="Notifications"
@@ -307,13 +306,14 @@ export function TopUtilityBar({ workspaceName }: TopUtilityBarProps) {
                   {notifications.length === 0 ? (
                     <div className="text-center py-8 text-gray-400">
                       <Bell size={20} className="mx-auto mb-2 opacity-30" />
-                      <p className="text-xs">No notifications</p>
+                      <p className="text-xs">No notifications yet</p>
                     </div>
                   ) : (
                     <div className="divide-y divide-gray-50">
                       {notifications.map((notif) => (
                         <div key={notif.id} className="px-4 py-3 hover:bg-gray-50 text-xs">
                           <p className="text-gray-600">{getNotificationMessage(notif)}</p>
+                          <p className="text-gray-400 mt-0.5">{new Date(notif.created_at).toLocaleString()}</p>
                         </div>
                       ))}
                     </div>
@@ -346,13 +346,16 @@ export function TopUtilityBar({ workspaceName }: TopUtilityBarProps) {
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowProfileDropdown(false)} />
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl border border-gray-200 shadow-lg z-50 overflow-hidden">
-                <button 
+                <button
                   onClick={() => { navigate(`/workspace/${workspaceId}/profile`); setShowProfileDropdown(false) }}
                   className="w-full px-4 py-2.5 text-sm text-left text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   Profile
                 </button>
-                <button className="w-full px-4 py-2.5 text-sm text-left text-red-600 hover:bg-red-50 transition-colors">
+                <button
+                  onClick={() => { setShowProfileDropdown(false); signOut() }}
+                  className="w-full px-4 py-2.5 text-sm text-left text-red-600 hover:bg-red-50 transition-colors"
+                >
                   Sign out
                 </button>
               </div>
@@ -371,13 +374,15 @@ interface TopHeaderProps {
 }
 
 export function TopHeader({ title, subtitle, actions }: TopHeaderProps) {
-  const { user, profile } = useAuth()
-  const { unreadCount, markAllAsRead } = useNotifications()
+  const { user, profile, signOut } = useAuth()
+  const { unreadCount, markAllAsRead, notifications } = useNotifications()
   const [showDropdown, setShowDropdown] = useState(false)
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false)
   const navigate = useNavigate()
   const { id: workspaceId } = useParams<{ id: string }>()
 
   const handleProfileClick = () => {
+    setShowProfileDropdown(false)
     if (workspaceId) {
       navigate(`/workspace/${workspaceId}/profile`)
     } else {
@@ -386,20 +391,42 @@ export function TopHeader({ title, subtitle, actions }: TopHeaderProps) {
   }
 
   const handleToggleDropdown = () => {
-    setShowDropdown(!showDropdown)
-    if (!showDropdown && unreadCount > 0) {
+    const next = !showDropdown
+    setShowDropdown(next)
+    if (next && unreadCount > 0) {
       markAllAsRead()
     }
   }
 
+  const getNotificationMessage = (notif: AppNotification) => {
+    const actor = notif.user_name || notif.user_email?.split('@')[0] || 'Someone'
+    const taskTitle = notif.details.task_title || 'a task'
+    switch (notif.action_type) {
+      case 'task_created':
+        return <span><strong className="text-gray-900">{actor}</strong> created &ldquo;{taskTitle}&rdquo;</span>
+      case 'task_updated':
+        if (notif.details.status_changed) {
+          const statusMap: Record<string, string> = { todo: 'To Do', in_progress: 'In Progress', done: 'Done' }
+          return <span><strong className="text-gray-900">{actor}</strong> moved &ldquo;{taskTitle}&rdquo; to <span className="text-violet-600">{statusMap[notif.details.new_status || 'todo']}</span></span>
+        }
+        return <span><strong className="text-gray-900">{actor}</strong> updated &ldquo;{taskTitle}&rdquo;</span>
+      case 'comment_added':
+        return <span><strong className="text-gray-900">{actor}</strong> commented on &ldquo;{taskTitle}&rdquo;</span>
+      default:
+        return <span>New activity</span>
+    }
+  }
+
   return (
-    <header className="flex items-center justify-between px-8 py-5 border-b border-gray-100 bg-white/70 backdrop-blur-sm relative z-30">
-      <div>
-        <h1 className="text-xl font-bold text-gray-900">{title}</h1>
-        {subtitle && <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>}
+    <header className="flex items-center justify-between px-4 sm:px-8 py-4 sm:py-5 border-b border-gray-100 bg-white/70 backdrop-blur-sm relative z-30">
+      <div className="min-w-0 flex-1 mr-4">
+        <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">{title}</h1>
+        {subtitle && <p className="text-xs sm:text-sm text-gray-500 mt-0.5 truncate">{subtitle}</p>}
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         {actions}
+
+        {/* Notification Bell with Dropdown */}
         <div className="relative">
           <button
             onClick={handleToggleDropdown}
@@ -407,24 +434,99 @@ export function TopHeader({ title, subtitle, actions }: TopHeaderProps) {
               showDropdown ? 'bg-violet-50 text-violet-600' : 'bg-gray-50 hover:bg-gray-100 text-gray-500'
             }`}
             aria-label="Notifications"
+            id="btn-notifications"
           >
             <Bell size={16} />
             {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 animate-pulse" />
             )}
           </button>
+
+          {showDropdown && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowDropdown(false)} />
+              <div className="absolute right-0 top-full mt-2 w-80 max-h-[400px] overflow-hidden bg-white rounded-xl border border-gray-200 shadow-xl z-50">
+                <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-gray-900">Notifications</span>
+                  {notifications.length > 0 && (
+                    <span className="text-xs text-gray-400">{notifications.length} total</span>
+                  )}
+                </div>
+                <div className="overflow-y-auto max-h-[340px] scrollbar-thin">
+                  {notifications.length === 0 ? (
+                    <div className="text-center py-10 text-gray-400">
+                      <Bell size={22} className="mx-auto mb-2 opacity-30" />
+                      <p className="text-xs font-medium">No notifications yet</p>
+                      <p className="text-[11px] mt-1 text-gray-300">Activity will appear here</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-50">
+                      {notifications.map((notif) => (
+                        <div
+                          key={notif.id}
+                          className="px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                          onClick={() => {
+                            if (notif.task_id && workspaceId) {
+                              navigate(`/workspace/${workspaceId}/tasks/${notif.task_id}`)
+                              setShowDropdown(false)
+                            }
+                          }}
+                        >
+                          <p className="text-xs text-gray-600 leading-relaxed">{getNotificationMessage(notif)}</p>
+                          <p className="text-[11px] text-gray-400 mt-0.5">
+                            {new Date(notif.created_at).toLocaleString('en-US', {
+                              month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </div>
-        <button
-          onClick={handleProfileClick}
-          className="hover:opacity-80 transition-opacity rounded-full"
-        >
-          <Avatar
-            email={user?.email || ''}
-            name={profile?.full_name || user?.email || ''}
-            src={profile?.avatar_url}
-            size="sm"
-          />
-        </button>
+
+        {/* Profile button with dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+            className="hover:opacity-80 transition-opacity rounded-full"
+          >
+            <Avatar
+              email={user?.email || ''}
+              name={profile?.full_name || user?.email || ''}
+              src={profile?.avatar_url}
+              size="sm"
+            />
+          </button>
+          {showProfileDropdown && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowProfileDropdown(false)} />
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl border border-gray-200 shadow-lg z-50 overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-100">
+                  <p className="text-sm font-semibold text-gray-900 truncate">
+                    {profile?.full_name || user?.email?.split('@')[0]}
+                  </p>
+                  <p className="text-xs text-gray-400 truncate">{user?.email}</p>
+                </div>
+                <button
+                  onClick={handleProfileClick}
+                  className="w-full px-4 py-2.5 text-sm text-left text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Profile
+                </button>
+                <button
+                  onClick={() => { setShowProfileDropdown(false); signOut() }}
+                  className="w-full px-4 py-2.5 text-sm text-left text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  Sign out
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </header>
   )

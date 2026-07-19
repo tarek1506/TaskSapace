@@ -290,7 +290,7 @@ export function MembersPage() {
         }
       />
 
-      <div className="flex-1 overflow-y-auto scrollbar-thin p-6">
+      <div className="flex-1 overflow-y-auto scrollbar-thin p-4 sm:p-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl">
           {/* Members list */}
           <div className="space-y-3">

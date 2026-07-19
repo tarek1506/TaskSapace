@@ -109,7 +109,7 @@ export function WorkspacesPage() {
       <div className="fixed bottom-0 right-0 w-96 h-96 bg-pink-200/20 rounded-full blur-3xl pointer-events-none" />
 
       {/* Top bar */}
-      <div className="flex items-center justify-between px-8 py-5">
+      <div className="flex items-center justify-between px-4 sm:px-8 py-4 sm:py-5">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-200">
             <Zap size={18} className="text-white" />
@@ -126,9 +126,9 @@ export function WorkspacesPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-start px-8 py-8 max-w-5xl mx-auto w-full">
+      <div className="flex-1 flex flex-col items-center justify-start px-4 sm:px-8 py-8 max-w-5xl mx-auto w-full">
         <div className="w-full mb-8 fade-in">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Your Workspaces</h1>
               <p className="text-gray-500 mt-1 text-sm">

@@ -20,6 +20,7 @@ export function DashboardPage() {
   const { user } = useAuth()
 
   const [showTaskModal, setShowTaskModal] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [members, setMembers] = useState<WorkspaceMember[]>([])
   const [tasks, setTasks] = useState<Task[]>([])
 
@@ -27,6 +28,7 @@ export function DashboardPage() {
   const canEdit = isOwner || member.can_edit_task
 
   const fetchData = async () => {
+    setLoading(true)
     const [tasksRes, membersRes, freshMemberRes] = await Promise.all([
       supabase.from('tasks').select('*').eq('workspace_id', workspace.id).order('order_index', { ascending: true }),
       supabase.from('workspace_members').select('*').eq('workspace_id', workspace.id),
@@ -55,6 +57,7 @@ export function DashboardPage() {
     } else {
       setMembers([])
     }
+    setLoading(false)
   }
 
   useEffect(() => { fetchData() }, [workspace.id])
@@ -68,39 +71,45 @@ export function DashboardPage() {
     <div className="flex-1 flex flex-col overflow-hidden">
       <DashboardHeader title={workspace.name} />
 
-      <div className="flex-1 overflow-y-auto scrollbar-thin px-8 pb-8">
-        <div className="flex gap-6">
-          {/* Left Column (~65%) */}
-          <div className="flex-[2] space-y-6 min-w-0">
-            <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-base font-bold text-gray-900">Tasks</h2>
-                  <span className="text-[11px] font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{tasks.length}</span>
+      <div className="flex-1 overflow-y-auto scrollbar-thin px-4 sm:px-8 pb-8">
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="w-6 h-6 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
+          </div>
+        ) : (
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Left Column (~65%) */}
+            <div className="flex-[2] space-y-6 min-w-0">
+              <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-base font-bold text-gray-900">Tasks</h2>
+                    <span className="text-[11px] font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{tasks.length}</span>
+                  </div>
+                  {canCreate && <GradientButton onClick={() => setShowTaskModal(true)} />}
                 </div>
-                {canCreate && <GradientButton onClick={() => setShowTaskModal(true)} />}
+                <TaskList tasks={tasks} members={members} onToggle={handleToggle} />
               </div>
-              <TaskList tasks={tasks} members={members} onToggle={handleToggle} />
+
+              <GanttMini />
             </div>
 
-            <GanttMini />
-          </div>
+            {/* Right Column (~35%) */}
+            <div className="flex-[1] space-y-6 min-w-0 lg:min-w-[280px]">
+              <TimeWidget />
 
-          {/* Right Column (~35%) */}
-          <div className="flex-[1] space-y-6 min-w-[280px]">
-            <TimeWidget />
-
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-base font-bold text-gray-900">Projects</h2>
-                <button className="flex items-center gap-1 text-xs font-medium text-purple-600 hover:text-purple-700 transition-colors">
-                  View all
-                </button>
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-base font-bold text-gray-900">Projects</h2>
+                  <button className="flex items-center gap-1 text-xs font-medium text-purple-600 hover:text-purple-700 transition-colors">
+                    View all
+                  </button>
+                </div>
+                <ProjectCards />
               </div>
-              <ProjectCards />
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       <TaskModal

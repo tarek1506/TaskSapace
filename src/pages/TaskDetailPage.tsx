@@ -163,7 +163,7 @@ export function TaskDetailPage() {
         }
       />
 
-      <div className="flex-1 overflow-y-auto scrollbar-thin p-6">
+      <div className="flex-1 overflow-y-auto scrollbar-thin p-4 sm:p-6">
         <div className="max-w-3xl mx-auto space-y-6">
           {/* Main task card */}
           <Card className="fade-in">

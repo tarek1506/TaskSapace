@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Camera, Save, Upload } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
@@ -20,6 +20,14 @@ export function ProfilePage() {
   // Form state
   const [fullName, setFullName] = useState(profile?.full_name || '')
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '')
+
+  // Sync form state when profile is loaded/refreshed
+  useEffect(() => {
+    if (profile) {
+      setFullName(profile.full_name || '')
+      setAvatarUrl(profile.avatar_url || '')
+    }
+  }, [profile])
 
   const handleSaveProfile = async () => {
     if (!user) return
@@ -109,16 +117,13 @@ export function ProfilePage() {
     }
   }
 
-  const hasChanges = profile && (
-    fullName !== (profile.full_name || '') ||
-    avatarUrl !== (profile.avatar_url || '')
-  )
+  const hasChanges = fullName !== (profile?.full_name || '')
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <TopHeader title="Profile" subtitle="Manage your account" />
 
-      <div className="flex-1 overflow-y-auto scrollbar-thin p-6">
+      <div className="flex-1 overflow-y-auto scrollbar-thin p-4 sm:p-6">
         <div className="max-w-lg space-y-6">
           {/* Avatar Section */}
           <Card>

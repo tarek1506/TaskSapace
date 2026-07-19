@@ -46,12 +46,12 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
   }
 
   return (
-    <div className="flex items-center justify-between px-8 py-5">
-      <h1 className="text-[28px] font-bold text-gray-900 leading-tight">{title}</h1>
+    <div className="flex items-center justify-between px-4 sm:px-8 py-4 sm:py-5">
+      <h1 className="text-xl sm:text-[28px] font-bold text-gray-900 leading-tight truncate">{title}</h1>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         {/* Search */}
-        <div className="relative">
+        <div className="relative hidden sm:block">
           <input
             type="text"
             placeholder="Search..."

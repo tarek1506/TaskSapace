@@ -25,7 +25,7 @@ export function TimelinePage() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="bg-white px-8 pt-5 pb-0">
+      <div className="bg-white px-4 sm:px-8 pt-4 sm:pt-5 pb-0">
         <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
           <span>{workspace.name}</span>
           <span>/</span>
@@ -35,7 +35,7 @@ export function TimelinePage() {
         <p className="text-sm text-gray-500 mt-0.5">Project roadmap and task scheduling</p>
 
         {/* Tab Bar */}
-        <div className="flex items-center gap-6 mt-4 border-b border-gray-200">
+        <div className="flex items-center gap-4 sm:gap-6 mt-4 border-b border-gray-200 overflow-x-auto scrollbar-thin">
           {TABS.map((tab) => (
             <button
               key={tab.id}

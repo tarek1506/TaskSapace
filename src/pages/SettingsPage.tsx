@@ -39,12 +39,18 @@ export function SettingsPage() {
   const handleDeleteWorkspace = async () => {
     if (!isOwner) return
     setDeleting(true)
-    // Delete in order: comments → tasks → members → workspace
-    await supabase.from('task_comments').delete().eq(
-      'task_id',
-      supabase.from('tasks').select('id').eq('workspace_id', workspace.id)
-    )
+    // Step 1: Get all task IDs in this workspace
+    const { data: taskRows } = await supabase
+      .from('tasks')
+      .select('id')
+      .eq('workspace_id', workspace.id)
+    const taskIds = (taskRows || []).map((t: any) => t.id)
+    // Step 2: Delete comments for those tasks
+    if (taskIds.length > 0) {
+      await supabase.from('task_comments').delete().in('task_id', taskIds)
+    }
     await supabase.from('tasks').delete().eq('workspace_id', workspace.id)
+    await supabase.from('notifications').delete().eq('workspace_id', workspace.id)
     await supabase.from('workspace_members').delete().eq('workspace_id', workspace.id)
     await supabase.from('workspaces').delete().eq('id', workspace.id)
     setDeleting(false)
@@ -56,7 +62,7 @@ export function SettingsPage() {
     <div className="flex flex-col h-full overflow-hidden">
       <TopHeader title="Settings" subtitle="Manage your workspace" />
 
-      <div className="flex-1 overflow-y-auto scrollbar-thin p-6">
+      <div className="flex-1 overflow-y-auto scrollbar-thin p-4 sm:p-6">
         <div className="max-w-lg space-y-6">
           {/* Workspace Name */}
           <Card>
