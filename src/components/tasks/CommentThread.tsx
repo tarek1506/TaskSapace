@@ -12,7 +12,8 @@ interface CommentThreadProps {
   workspaceId: string
   taskTitle: string
   members: WorkspaceMember[]
-  assignedTo: string[]
+  ownerId: string
+  createdBy: string
 }
 
 function renderContent(content: string) {
@@ -29,7 +30,7 @@ function renderContent(content: string) {
   })
 }
 
-export function CommentThread({ taskId, workspaceId, taskTitle, members, assignedTo }: CommentThreadProps) {
+export function CommentThread({ taskId, workspaceId, taskTitle, members, ownerId, createdBy }: CommentThreadProps) {
   const { user } = useAuth()
   const [comments, setComments] = useState<TaskComment[]>([])
   const [newComment, setNewComment] = useState('')
@@ -42,17 +43,21 @@ export function CommentThread({ taskId, workspaceId, taskTitle, members, assigne
   const listEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const assignees = useMemo(() => {
-    return members.filter(m => assignedTo.includes(m.user_id))
-  }, [members, assignedTo])
+  const mentionableUsers = useMemo(() => {
+    return [...members].sort((a, b) => {
+      if (a.user_id === ownerId) return -1
+      if (b.user_id === ownerId) return 1
+      return 0
+    })
+  }, [members, ownerId])
 
   const filteredMentions = useMemo(() => {
-    if (!mentionQuery && mentionQuery !== '') return assignees
+    if (!mentionQuery && mentionQuery !== '') return mentionableUsers
     const q = mentionQuery.toLowerCase()
-    return assignees.filter(a =>
+    return mentionableUsers.filter(a =>
       (a.user_name || a.user_email || '').toLowerCase().includes(q)
     )
-  }, [assignees, mentionQuery])
+  }, [mentionableUsers, mentionQuery])
 
   useEffect(() => {
     fetchComments()
@@ -154,17 +159,41 @@ export function CommentThread({ taskId, workspaceId, taskTitle, members, assigne
         mentionedNames.add(match[1])
       }
       if (mentionedNames.size > 0) {
-        const mentionedMembers = assignees.filter(a => {
+        const mentionedMembers = members.filter(a => {
           const name = a.user_name || a.user_email
           return name && mentionedNames.has(name) && a.user_id !== user.id
         })
+
+        const actorName = myProfile?.full_name || user.email?.split('@')[0] || 'Someone'
+        const baseDetails = { task_title: taskTitle, task_id: taskId, actor_name: actorName }
+        const notifiedUserIds = new Set<string>()
+
+        // Notify each mentioned user
         for (const m of mentionedMembers) {
+          if (!notifiedUserIds.has(m.user_id)) {
+            notifiedUserIds.add(m.user_id)
+            await supabase.from('notifications').insert({
+              workspace_id: workspaceId,
+              user_id: m.user_id,
+              task_id: taskId,
+              action_type: 'comment_mentioned',
+              details: baseDetails,
+            })
+          }
+        }
+
+        // Also notify workspace owner and task creator
+        const extraRecipients = [ownerId, createdBy].filter(
+          uid => uid && uid !== user.id && !notifiedUserIds.has(uid)
+        )
+        for (const uid of extraRecipients) {
+          notifiedUserIds.add(uid)
           await supabase.from('notifications').insert({
             workspace_id: workspaceId,
-            user_id: m.user_id,
+            user_id: uid,
             task_id: taskId,
             action_type: 'comment_mentioned',
-            details: { task_title: taskTitle, task_id: taskId, actor_name: myProfile?.full_name || user.email?.split('@')[0] || 'Someone' },
+            details: baseDetails,
           })
         }
       }

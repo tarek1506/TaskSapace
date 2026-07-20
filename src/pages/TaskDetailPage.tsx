@@ -302,7 +302,7 @@ export function TaskDetailPage() {
           {/* Comments section */}
           <Card className="fade-in">
             <CardContent>
-              <CommentThread taskId={task.id} workspaceId={workspaceId!} taskTitle={task.title} members={members} assignedTo={task.assigned_to || []} />
+              <CommentThread taskId={task.id} workspaceId={workspaceId!} taskTitle={task.title} members={members} ownerId={workspace.owner_id} createdBy={task.created_by} />
             </CardContent>
           </Card>
         </div>
