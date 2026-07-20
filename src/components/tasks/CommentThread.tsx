@@ -164,7 +164,7 @@ export function CommentThread({ taskId, workspaceId, taskTitle, members, assigne
             user_id: m.user_id,
             task_id: taskId,
             action_type: 'comment_mentioned',
-            details: { task_title: taskTitle, task_id: taskId },
+            details: { task_title: taskTitle, task_id: taskId, actor_name: myProfile?.full_name || user.email?.split('@')[0] || 'Someone' },
           })
         }
       }

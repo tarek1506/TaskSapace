@@ -142,6 +142,7 @@ export interface AppNotification {
     old_title?: string
     new_title?: string
     comment_preview?: string
+    actor_name?: string
   }
   created_at: string
   // Joined fields
