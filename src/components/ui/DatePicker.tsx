@@ -31,6 +31,20 @@ export function DatePicker({
   const [open, setOpen] = React.useState(false)
   const [viewDate, setViewDate] = React.useState(() => value ? new Date(value) : new Date())
 
+  // 12-hour helpers
+  const to12 = (h24: number) => {
+    const h = h24 % 12 || 12
+    return h
+  }
+  const toAmPm = (h24: number) => (h24 >= 12 ? 'PM' : 'AM')
+  const to24 = (h12: number, ampm: string) => {
+    if (ampm === 'AM') return h12 === 12 ? 0 : h12
+    return h12 === 12 ? 12 : h12 + 12
+  }
+
+  const getDisplayHour = () => to12(parseInt(timeStr.split(':')[0] || '9', 10))
+  const getDisplayAmPm = () => toAmPm(parseInt(timeStr.split(':')[0] || '9', 10))
+
   React.useEffect(() => {
     if (value) {
       const d = new Date(value)
@@ -53,6 +67,22 @@ export function DatePicker({
     } else {
       onChange(format(selectedDate, "yyyy-MM-dd"))
     }
+  }
+
+  const set12Hour = (h12: number, ampm: string) => {
+    const h24 = to24(h12, ampm)
+    const newTime = `${String(h24).padStart(2, '0')}:${timeStr.split(':')[1] || '00'}`
+    setTimeStr(newTime)
+    if (date) emitChange(date, newTime)
+  }
+
+  const setAmPm = (ampm: string) => {
+    const h24 = parseInt(timeStr.split(':')[0] || '9', 10)
+    const h12 = to12(h24)
+    const newH24 = to24(h12, ampm)
+    const newTime = `${String(newH24).padStart(2, '0')}:${timeStr.split(':')[1] || '00'}`
+    setTimeStr(newTime)
+    if (date) emitChange(date, newTime)
   }
 
   const handleSelect = (selectedDate: Date) => {
@@ -213,25 +243,22 @@ export function DatePicker({
               <div className="mt-2 pt-2 border-t border-gray-100">
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="text-xs text-gray-500 font-medium">Time</span>
-                  <span className="text-xs font-semibold text-gray-900">{timeStr}</span>
+                  <span className="text-xs font-semibold text-gray-900">
+                    {getDisplayHour()}:{(timeStr.split(':')[1] || '00')} {getDisplayAmPm()}
+                  </span>
                 </div>
                 <div className="flex gap-2">
-                  {/* Hours */}
+                  {/* Hours 1-12 */}
                   <div className="flex-1">
                     <div className="text-[10px] text-gray-400 font-medium mb-0.5 text-center">Hour</div>
                     <div className="h-24 overflow-y-auto scrollbar-thin rounded-lg border border-gray-100 bg-gray-50/50">
-                      {Array.from({ length: 24 }, (_, i) => i).map(h => {
-                        const hStr = String(h).padStart(2, '0')
-                        const active = timeStr.split(':')[0] === hStr
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map(h => {
+                        const active = getDisplayHour() === h
                         return (
                           <button
                             key={h}
                             type="button"
-                            onClick={() => {
-                              const newTime = `${hStr}:${timeStr.split(':')[1] || '00'}`
-                              setTimeStr(newTime)
-                              if (date) emitChange(date, newTime)
-                            }}
+                            onClick={() => set12Hour(h, getDisplayAmPm())}
                             className={cn(
                               'w-full h-7 flex items-center justify-center text-[11px] transition-colors',
                               active
@@ -239,7 +266,7 @@ export function DatePicker({
                                 : 'text-gray-600 hover:bg-gray-100'
                             )}
                           >
-                            {hStr}
+                            {h}
                           </button>
                         )
                       })}
@@ -272,6 +299,27 @@ export function DatePicker({
                           </button>
                         )
                       })}
+                    </div>
+                  </div>
+                  {/* AM/PM */}
+                  <div className="w-12">
+                    <div className="text-[10px] text-gray-400 font-medium mb-0.5 text-center">&nbsp;</div>
+                    <div className="rounded-lg border border-gray-100 bg-gray-50/50 overflow-hidden">
+                      {['AM', 'PM'].map(ap => (
+                        <button
+                          key={ap}
+                          type="button"
+                          onClick={() => setAmPm(ap)}
+                          className={cn(
+                            'w-full h-[48px] flex items-center justify-center text-[11px] font-medium transition-colors',
+                            getDisplayAmPm() === ap
+                              ? 'bg-violet-600 text-white font-semibold'
+                              : 'text-gray-600 hover:bg-gray-100'
+                          )}
+                        >
+                          {ap}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>

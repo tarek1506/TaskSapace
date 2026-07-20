@@ -92,12 +92,27 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
                     </div>
                   ) : (
                     <div className="divide-y divide-gray-50">
-                      {notifications.map((notif) => (
-                        <div key={notif.id} className="px-4 py-3 hover:bg-gray-50 text-xs">
-                          <p className="text-gray-600">{getNotificationMessage(notif)}</p>
-                          <p className="text-gray-400 mt-1">{formatDateTime(notif.created_at)}</p>
-                        </div>
-                      ))}
+                      {notifications.map((notif) => {
+                        const taskId = notif.task_id || notif.details.task_id
+                        return (
+                          <div
+                            key={notif.id}
+                            onClick={() => {
+                              if (taskId) {
+                                navigate(`/workspace/${workspaceId}/tasks/${taskId}`)
+                                setShowNotifDropdown(false)
+                              }
+                            }}
+                            className={cn(
+                              'px-4 py-3 text-xs',
+                              taskId ? 'hover:bg-gray-50 cursor-pointer' : '',
+                            )}
+                          >
+                            <p className="text-gray-600">{getNotificationMessage(notif)}</p>
+                            <p className="text-gray-400 mt-1">{formatDateTime(notif.created_at)}</p>
+                          </div>
+                        )
+                      })}
                     </div>
                   )}
                 </div>

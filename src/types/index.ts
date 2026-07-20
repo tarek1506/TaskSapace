@@ -60,6 +60,7 @@ export interface TaskComment {
   // Joined
   user_name?: string
   user_email?: string
+  user_avatar_url?: string | null
 }
 
 export interface MemberProfile {

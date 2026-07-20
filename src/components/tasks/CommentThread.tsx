@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Send, MessageCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
@@ -17,6 +17,7 @@ export function CommentThread({ taskId }: CommentThreadProps) {
   const [newComment, setNewComment] = useState('')
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const listEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetchComments()
@@ -47,7 +48,7 @@ export function CommentThread({ taskId }: CommentThreadProps) {
       const uniqueUserIds = [...new Set(data.map((c: any) => c.user_id))]
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, email, full_name')
+        .select('id, email, full_name, avatar_url')
         .in('id', uniqueUserIds)
 
       const profileMap: Record<string, any> = {}
@@ -60,6 +61,7 @@ export function CommentThread({ taskId }: CommentThreadProps) {
             ...c,
             user_email: p?.email || '',
             user_name: p?.full_name || p?.email?.split('@')[0] || 'User',
+            user_avatar_url: p?.avatar_url || null,
           }
         })
       )
@@ -72,6 +74,13 @@ export function CommentThread({ taskId }: CommentThreadProps) {
   const submitComment = async () => {
     if (!newComment.trim() || !user) return
     setSubmitting(true)
+
+    const { data: myProfile } = await supabase
+      .from('profiles')
+      .select('full_name, avatar_url')
+      .eq('id', user.id)
+      .single()
+
     const { data } = await supabase.from('task_comments').insert({
       task_id: taskId,
       user_id: user.id,
@@ -80,8 +89,9 @@ export function CommentThread({ taskId }: CommentThreadProps) {
     if (data) {
       setComments(prev => [...prev, {
         ...data,
-        user_email: user.email || '',
-        user_name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+        user_email: myProfile?.full_name ? (user.email || '') : (user.email || ''),
+        user_name: myProfile?.full_name || user.email?.split('@')[0] || 'User',
+        user_avatar_url: myProfile?.avatar_url || null,
       }])
     }
     setNewComment('')
@@ -93,6 +103,10 @@ export function CommentThread({ taskId }: CommentThreadProps) {
       submitComment()
     }
   }
+
+  useEffect(() => {
+    listEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [comments.length])
 
   return (
     <div className="mt-6">
@@ -115,11 +129,14 @@ export function CommentThread({ taskId }: CommentThreadProps) {
         )}
         {comments.map((comment) => (
           <div key={comment.id} className="flex gap-3 fade-in" id={`comment-${comment.id}`}>
-            <Avatar
-              email={comment.user_email}
-              name={comment.user_name}
-              size="sm"
-            />
+            <div title={comment.user_email}>
+              <Avatar
+                email={comment.user_email}
+                name={comment.user_name}
+                src={comment.user_avatar_url}
+                size="sm"
+              />
+            </div>
             <div className="flex-1">
               <div className="flex items-baseline gap-2 mb-1">
                 <span className="text-sm font-semibold text-gray-800">
@@ -133,15 +150,19 @@ export function CommentThread({ taskId }: CommentThreadProps) {
             </div>
           </div>
         ))}
+        <div ref={listEndRef} />
       </div>
 
       {/* Input area */}
       <div className="flex gap-3 items-end">
-        <Avatar
-          email={user?.email || ''}
-          name={user?.user_metadata?.name || user?.email || ''}
-          size="sm"
-        />
+        <div title={user?.email || ''}>
+          <Avatar
+            email={user?.email || ''}
+            name={user?.user_metadata?.name || user?.email || ''}
+            src={user?.user_metadata?.avatar_url || null}
+            size="sm"
+          />
+        </div>
         <div className="flex-1 flex gap-2">
           <textarea
             value={newComment}

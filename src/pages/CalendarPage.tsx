@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useOutletContext } from 'react-router-dom'
+import { useOutletContext, useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
@@ -23,6 +23,7 @@ const STATUS_COLORS: Record<string, string> = {
 export function CalendarPage() {
   const { workspace, member, isOwner } = useOutletContext<OutletCtx>()
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
@@ -146,7 +147,8 @@ export function CalendarPage() {
                       {dayTasks.slice(0, 3).map((task) => (
                         <div
                           key={task.id}
-                          className="text-[10px] font-medium px-1.5 py-0.5 rounded truncate"
+                          onClick={() => navigate(`/workspace/${workspace.id}/tasks/${task.id}`)}
+                          className="text-[10px] font-medium px-1.5 py-0.5 rounded truncate cursor-pointer hover:opacity-80 transition-opacity"
                           style={{
                             backgroundColor: `${STATUS_COLORS[task.status]}20`,
                             color: STATUS_COLORS[task.status],

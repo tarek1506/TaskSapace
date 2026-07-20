@@ -2,12 +2,13 @@ import { useState, useEffect, useMemo } from 'react'
 import { useOutletContext, useNavigate } from 'react-router-dom'
 import {
   Plus, Search, LayoutGrid, LayoutList, Table,
-  CheckCircle2, Calendar, GripVertical
+  CheckCircle2, Calendar, GripVertical, Users, MessageCircle
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { DashboardHeader, GradientButton } from '@/components/dashboard/DashboardWidgets'
 import { Avatar } from '@/components/ui/Avatar'
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/Select'
 import { TaskModal } from '@/components/tasks/TaskModal'
 import { ConfirmModal } from '@/components/ui/Modal'
 import { cn } from '@/lib/utils'
@@ -56,6 +57,7 @@ export function TasksPage() {
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [deletingTask, setDeletingTask] = useState<Task | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [assigneeFilter, setAssigneeFilter] = useState<string>('all')
 
   // Drag state
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null)
@@ -79,14 +81,32 @@ export function TasksPage() {
 
     const freshMember = freshMemberRes.data || member
 
+    let allTasks: Task[]
     if (tasksRes.error && tasksRes.error.message.includes('order_index')) {
       const fallback = await supabase.from('tasks').select('*').eq('workspace_id', workspace.id).order('created_at', { ascending: false })
-      const fallbackTasks = fallback.data || []
-      setTasks(!isOwner && !freshMember.can_view_all_tasks ? fallbackTasks.filter(t => t.assigned_to?.includes(user?.id || '')) : fallbackTasks)
+      allTasks = fallback.data || []
     } else {
-      const allTasks = tasksRes.data || []
-      setTasks(!isOwner && !freshMember.can_view_all_tasks ? allTasks.filter(t => t.assigned_to?.includes(user?.id || '')) : allTasks)
+      allTasks = tasksRes.data || []
     }
+
+    if (!isOwner && !freshMember.can_view_all_tasks) {
+      allTasks = allTasks.filter(t => t.assigned_to?.includes(user?.id || ''))
+    }
+
+    // Fetch comment counts
+    const taskIds = allTasks.map(t => t.id)
+    const countMap: Record<string, number> = {}
+    if (taskIds.length > 0) {
+      const { data: commentRows } = await supabase
+        .from('task_comments')
+        .select('task_id')
+        .in('task_id', taskIds)
+      for (const row of commentRows || []) {
+        countMap[row.task_id] = (countMap[row.task_id] || 0) + 1
+      }
+    }
+
+    setTasks(allTasks.map(t => ({ ...t, comments_count: countMap[t.id] || 0 })))
     if (membersRes.data && membersRes.data.length > 0) {
       const uniqueUserIds = [...new Set(membersRes.data.map((m: any) => m.user_id))]
       const { data: profiles } = await supabase.from('profiles').select('id, email, full_name, avatar_url').in('id', uniqueUserIds)
@@ -187,10 +207,13 @@ export function TasksPage() {
     fetchData()
   }
 
-  const filteredTasks = useMemo(
-    () => tasks.filter(t => !search || t.title.toLowerCase().includes(search.toLowerCase())),
-    [tasks, search]
-  )
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(t => {
+      if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false
+      if (assigneeFilter !== 'all' && !t.assigned_to?.includes(assigneeFilter)) return false
+      return true
+    })
+  }, [tasks, search, assigneeFilter])
 
   const getColumnTasks = (status: TaskStatus) =>
     filteredTasks.filter(t => t.status === status).sort((a, b) => a.order_index - b.order_index)
@@ -231,6 +254,31 @@ export function TasksPage() {
                 className="w-full sm:w-56 pl-9 pr-4 py-2 text-sm rounded-full bg-gray-100 border-0 focus:outline-none focus:ring-2 focus:ring-purple-200 placeholder-gray-400"
               />
             </div>
+
+            {/* Assignee Filter */}
+            <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+              <SelectTrigger className="w-full sm:w-48 h-10 rounded-full bg-gray-100! border-0! ring-0! outline-none! focus:ring-0! focus:outline-none! focus:bg-gray-100! text-sm shadow-none! [&>span]:line-clamp-1">
+                <SelectValue placeholder="All members" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="all">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center">
+                      <Users size={10} className="text-gray-500" />
+                    </div>
+                    <span>All members</span>
+                  </div>
+                </SelectItem>
+                {members.map(m => (
+                  <SelectItem key={m.user_id} value={m.user_id}>
+                    <div className="flex items-center gap-2">
+                      <Avatar name={m.user_name || m.user_email} src={m.user_avatar_url} size="xs" />
+                      <span>{m.user_name || m.user_email}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             {/* View Tabs */}
             <div className="flex items-center bg-gray-100 rounded-full p-0.5">
@@ -357,12 +405,20 @@ export function TasksPage() {
                                 </div>
                               )}
                             </div>
-                            {task.due_date && (
-                              <span className="flex items-center gap-1 text-[11px] text-gray-400">
-                                <Calendar size={10} />
-                                {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                              </span>
-                            )}
+                            <div className="flex items-center gap-2.5">
+                              {(task.comments_count ?? 0) > 0 && (
+                                <span className="flex items-center gap-1 text-[11px] text-gray-400">
+                                  <MessageCircle size={10} />
+                                  {task.comments_count}
+                                </span>
+                              )}
+                              {task.due_date && (
+                                <span className="flex items-center gap-1 text-[11px] text-gray-400">
+                                  <Calendar size={10} />
+                                  {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                </span>
+                              )}
+                            </div>
                           </div>
                           </div>
                           {showDropAfter && (
@@ -427,6 +483,12 @@ export function TasksPage() {
                               </span>
                             )}
                           </div>
+                          {(task.comments_count ?? 0) > 0 && (
+                            <span className="flex items-center gap-1 text-[11px] text-gray-400 ml-auto">
+                              <MessageCircle size={10} />
+                              {task.comments_count}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-5 py-3.5">
@@ -512,6 +574,12 @@ export function TasksPage() {
                   {PRIORITY_BADGE[task.priority] && (
                     <span className={cn('inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0', PRIORITY_BADGE[task.priority]!.bg, PRIORITY_BADGE[task.priority]!.color)}>
                       {PRIORITY_BADGE[task.priority]!.icon} {PRIORITY_BADGE[task.priority]!.label}
+                    </span>
+                  )}
+                  {(task.comments_count ?? 0) > 0 && (
+                    <span className="flex items-center gap-1 text-[11px] text-gray-400 shrink-0">
+                      <MessageCircle size={10} />
+                      {task.comments_count}
                     </span>
                   )}
                   <div className="flex items-center shrink-0">
