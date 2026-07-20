@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import {
-  DashboardHeader, TaskList, ProjectCards,
+  DashboardHeader, TaskList,
   GanttMini, TimeWidget, GradientButton
 } from '@/components/dashboard/DashboardWidgets'
 import { TaskModal } from '@/components/tasks/TaskModal'
@@ -91,22 +91,12 @@ export function DashboardPage() {
                 <TaskList tasks={tasks} members={members} onToggle={handleToggle} />
               </div>
 
-              <GanttMini />
+              <GanttMini tasks={tasks} members={members} />
             </div>
 
             {/* Right Column (~35%) */}
             <div className="flex-[1] space-y-6 min-w-0 lg:min-w-[280px]">
-              <TimeWidget />
-
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-base font-bold text-gray-900">Projects</h2>
-                  <button className="flex items-center gap-1 text-xs font-medium text-purple-600 hover:text-purple-700 transition-colors">
-                    View all
-                  </button>
-                </div>
-                <ProjectCards />
-              </div>
+              <TimeWidget tasks={tasks} />
             </div>
           </div>
         )}

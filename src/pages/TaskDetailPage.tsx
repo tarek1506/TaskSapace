@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/Button'
 import { AvatarGroup } from '@/components/ui/Avatar'
 import { ProjectPill, StatusBadge } from '@/components/ui/Badge'
 import { Card, CardContent } from '@/components/ui/Card'
-import { cn, formatDate } from '@/lib/utils'
+import { cn, formatDate, formatDateTime } from '@/lib/utils'
 import type { Workspace, WorkspaceMember, Task, TaskPriority } from '@/types'
 
 interface OutletCtx {
@@ -219,7 +219,7 @@ export function TaskDetailPage() {
                     </span>
                   </p>
                   <p className="text-sm font-medium text-gray-800">
-                    {task.due_date ? formatDate(task.due_date) : '—'}
+                    {task.due_date ? formatDateTime(task.due_date) : '—'}
                   </p>
                 </div>
 
@@ -234,7 +234,7 @@ export function TaskDetailPage() {
                     'text-sm font-medium',
                     task.deadline ? (new Date(task.deadline) < new Date() && task.status !== 'done' ? 'text-red-600' : 'text-gray-800') : 'text-gray-400'
                   )}>
-                    {task.deadline ? formatDate(task.deadline) : '—'}
+                    {task.deadline ? formatDateTime(task.deadline) : '—'}
                   </p>
                 </div>
 

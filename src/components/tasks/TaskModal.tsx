@@ -61,8 +61,8 @@ export function TaskModal({
       setDescription(task.description || '')
       setStatus(task.status)
       setPriority(task.priority || 'none')
-      setDueDate(task.due_date ? task.due_date.slice(0, 10) : '')
-      setDeadline(task.deadline ? task.deadline.slice(0, 10) : '')
+      setDueDate(task.due_date || '')
+      setDeadline(task.deadline || '')
       setProjectLabel(task.project_label || '')
       setProjectColor(task.project_color || '#8B5CF6')
       setAssignedTo(task.assigned_to || [])
@@ -199,9 +199,10 @@ export function TaskModal({
               <DatePicker
                 value={dueDate}
                 onChange={setDueDate}
-                placeholder="Set due date"
+                placeholder="Set due date & time"
                 disabled={!canEdit}
                 id="task-due-date"
+                showTime
               />
             </div>
           </div>
@@ -213,9 +214,10 @@ export function TaskModal({
               <DatePicker
                 value={deadline}
                 onChange={setDeadline}
-                placeholder="Set deadline"
+                placeholder="Set deadline & time"
                 disabled={!canEdit}
                 id="task-deadline"
+                showTime
               />
             </div>
           </div>

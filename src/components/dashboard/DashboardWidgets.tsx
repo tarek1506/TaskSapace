@@ -338,29 +338,85 @@ export function ProjectCards() {
 
 // ─── Gantt / Mini Timeline ────────────────────────────────────────────────────
 
-interface GanttBar {
-  id: string
-  label: string
-  initials: string
-  avatarColor: string
-  startCol: number
-  span: number
-  accentColor: string
-  accentBg: string
-  featured?: boolean
+interface GanttMiniProps {
+  tasks: Task[]
+  members: WorkspaceMember[]
 }
 
-const GANTT_BARS: GanttBar[] = [
-  { id: 'g1', label: 'Mobile App Design', initials: 'AL', avatarColor: 'bg-pink-400', startCol: 0, span: 3, accentColor: 'border-l-teal-500', accentBg: 'bg-white', featured: true },
-  { id: 'g2', label: 'API Integration', initials: 'JP', avatarColor: 'bg-blue-400', startCol: 1, span: 4, accentColor: 'border-l-orange-500', accentBg: 'bg-white' },
-  { id: 'g3', label: 'User Testing', initials: 'SK', avatarColor: 'bg-purple-400', startCol: 2, span: 2, accentColor: 'border-l-purple-500', accentBg: 'bg-white' },
-  { id: 'g4', label: 'Marketing Campaign', initials: 'LW', avatarColor: 'bg-teal-400', startCol: 3, span: 3, accentColor: 'border-l-rose-500', accentBg: 'bg-white' },
+const BAR_COLORS = [
+  'border-l-teal-500',
+  'border-l-orange-500',
+  'border-l-purple-500',
+  'border-l-rose-500',
+  'border-l-blue-500',
+  'border-l-emerald-500',
+  'border-l-amber-500',
 ]
 
-const GANTT_DAYS = ['May 9', 'May 10', 'May 11', 'May 12', 'May 13', 'May 14', 'May 15']
-const NOW_COL = 1
+export function GanttMini({ tasks, members }: GanttMiniProps) {
+  const timelineTasks = tasks.filter(t => t.due_date && t.deadline && t.status !== 'done')
 
-export function GanttMini() {
+  const memberMap = new Map(members.map(m => [m.user_id, m]))
+
+  if (timelineTasks.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+        <div className="flex items-center gap-2 mb-4">
+          <Calendar size={16} className="text-gray-400" />
+          <span className="text-sm font-bold text-gray-900">Timeline</span>
+        </div>
+        <p className="text-xs text-gray-400 text-center py-8">No tasks with both due date and deadline set</p>
+      </div>
+    )
+  }
+
+  const allDates = timelineTasks.flatMap(t => [new Date(t.due_date!), new Date(t.deadline!)])
+  const minDate = new Date(Math.min(...allDates.map(d => d.getTime())))
+  const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())))
+
+  minDate.setHours(0, 0, 0, 0)
+  maxDate.setHours(23, 59, 59, 999)
+
+  const totalDays = Math.max(1, Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24))) + 1
+
+  const days: { label: string; date: Date }[] = []
+  for (let i = 0; i < totalDays; i++) {
+    const d = new Date(minDate)
+    d.setDate(d.getDate() + i)
+    days.push({
+      label: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      date: d,
+    })
+  }
+
+  const now = new Date()
+  const nowOffset = (now.getTime() - minDate.getTime()) / (maxDate.getTime() - minDate.getTime())
+  const showNow = nowOffset >= 0 && nowOffset <= 1
+
+  const dayWidth = 100 / days.length
+
+  const getBarLeft = (dateStr: string) => {
+    const d = new Date(dateStr)
+    return ((d.getTime() - minDate.getTime()) / (maxDate.getTime() - minDate.getTime())) * 100
+  }
+
+  const getBarWidth = (startStr: string, endStr: string) => {
+    const s = new Date(startStr)
+    const e = new Date(endStr)
+    return Math.max(1, ((e.getTime() - s.getTime()) / (maxDate.getTime() - minDate.getTime())) * 100)
+  }
+
+  const getMemberInfo = (task: Task) => {
+    const uid = task.assigned_to?.[0]
+    if (!uid) return null
+    return memberMap.get(uid) || null
+  }
+
+  const getInitials = (m: WorkspaceMember) => {
+    const name = m.user_name || m.user_email || '?'
+    return name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+  }
+
   return (
     <div className="bg-white rounded-2xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
       <div className="flex items-center justify-between mb-4">
@@ -368,67 +424,78 @@ export function GanttMini() {
           <Calendar size={16} className="text-gray-400" />
           <span className="text-sm font-bold text-gray-900">Timeline</span>
         </div>
-        <span className="text-[11px] text-gray-400">{GANTT_DAYS.length} days</span>
+        <span className="text-[11px] text-gray-400">{days.length} days</span>
       </div>
 
       {/* Date Headers */}
       <div className="flex items-end mb-3 relative">
         <div className="w-24 shrink-0" />
         <div className="flex-1 flex relative">
-          {GANTT_DAYS.map((day, i) => (
-            <div key={i} className="flex-1 text-center">
-              <span className="text-[10px] text-gray-400 font-medium">{day}</span>
+          {days.map((day, i) => (
+            <div key={i} className="flex-1 text-center" style={{ minWidth: 0 }}>
+              <span className="text-[10px] text-gray-400 font-medium">{day.label}</span>
             </div>
           ))}
-          {/* Red "now" marker */}
-          <div
-            className="absolute top-0 bottom-0 w-[2px] bg-red-400 z-10"
-            style={{ left: `${(NOW_COL / GANTT_DAYS.length) * 100}%` }}
-          />
-          {/* Red pill */}
-          <div
-            className="absolute -top-2 -translate-x-1/2 z-20"
-            style={{ left: `${((NOW_COL + 0.5) / GANTT_DAYS.length) * 100}%` }}
-          >
-            <span className="text-[9px] font-bold text-white bg-red-400 px-1.5 py-0.5 rounded-full">12 AM</span>
-          </div>
+          {showNow && (
+            <>
+              <div
+                className="absolute top-0 bottom-0 w-[2px] bg-red-400 z-10"
+                style={{ left: `${nowOffset * 100}%` }}
+              />
+              <div
+                className="absolute -top-2 -translate-x-1/2 z-20"
+                style={{ left: `${nowOffset * 100}%` }}
+              >
+                <span className="text-[9px] font-bold text-white bg-red-400 px-1.5 py-0.5 rounded-full">Now</span>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
       {/* Bars */}
       <div className="space-y-2">
-        {GANTT_BARS.map(bar => (
-          <div key={bar.id} className="flex items-center">
-            <div className="w-24 shrink-0 pr-2">
-              <div className="flex items-center gap-1.5">
-                <div className={cn('w-5 h-5 rounded-full flex items-center justify-center text-[7px] font-bold text-white', bar.avatarColor)}>
-                  {bar.initials}
+        {timelineTasks.map((task, idx) => {
+          const member = getMemberInfo(task)
+          const left = getBarLeft(task.due_date!)
+          const width = getBarWidth(task.due_date!, task.deadline!)
+          const color = BAR_COLORS[idx % BAR_COLORS.length]
+          const isFeatured = task.priority === 'high'
+
+          return (
+            <div key={task.id} className="flex items-center">
+              <div className="w-24 shrink-0 pr-2">
+                <div className="flex items-center gap-1.5">
+                  {member ? (
+                    <Avatar name={member.user_name || member.user_email} src={member.user_avatar_url} size="xs" />
+                  ) : (
+                    <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-[7px] font-bold text-gray-500">?</div>
+                  )}
+                  <span className="text-[11px] text-gray-500 truncate">{task.title}</span>
                 </div>
-                <span className="text-[11px] text-gray-500 truncate">{bar.label}</span>
+              </div>
+              <div className="flex-1 relative h-7">
+                {days.map((_, i) => (
+                  <div key={i} className="absolute top-0 bottom-0 border-l border-gray-100" style={{ left: `${i * dayWidth}%` }} />
+                ))}
+                <div
+                  className={cn(
+                    'absolute top-1 h-5 rounded-full border-l-[3px] flex items-center px-2 shadow-sm',
+                    color,
+                    isFeatured ? 'bg-gradient-to-r from-purple-400 to-pink-400 text-white' : 'bg-white border border-gray-200 text-gray-600'
+                  )}
+                  style={{
+                    left: `${left}%`,
+                    width: `${width}%`,
+                    minWidth: '4px',
+                  }}
+                >
+                  <span className="text-[9px] font-medium truncate">{task.title}</span>
+                </div>
               </div>
             </div>
-            <div className="flex-1 relative h-7">
-              {/* Grid lines */}
-              {GANTT_DAYS.map((_, i) => (
-                <div key={i} className="absolute top-0 bottom-0 border-l border-gray-100" style={{ left: `${(i / GANTT_DAYS.length) * 100}%` }} />
-              ))}
-              {/* Bar */}
-              <div
-                className={cn(
-                  'absolute top-1 h-5 rounded-full border-l-[3px] flex items-center px-2 shadow-sm',
-                  bar.accentColor,
-                  bar.featured ? 'bg-gradient-to-r from-purple-400 to-pink-400 text-white' : 'bg-white border border-gray-200 text-gray-600'
-                )}
-                style={{
-                  left: `${(bar.startCol / GANTT_DAYS.length) * 100}%`,
-                  width: `${(bar.span / GANTT_DAYS.length) * 100}%`,
-                }}
-              >
-                <span className="text-[9px] font-medium truncate">{bar.label}</span>
-              </div>
-            </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
@@ -436,15 +503,47 @@ export function GanttMini() {
 
 // ─── Time Management Widget ───────────────────────────────────────────────────
 
-const CHART_DATA = [
-  { day: 'Mon', hours: 6.5 },
-  { day: 'Tue', hours: 7.2 },
-  { day: 'Wed', hours: 5.8 },
-  { day: 'Thu', hours: 7.8 },
-  { day: 'Fri', hours: 7.5 },
-]
+interface TimeWidgetProps {
+  tasks: Task[]
+}
 
-export function TimeWidget() {
+export function TimeWidget({ tasks }: TimeWidgetProps) {
+  const total = tasks.length
+  const done = tasks.filter(t => t.status === 'done').length
+  const inProgress = tasks.filter(t => t.status === 'in_progress').length
+  const todo = tasks.filter(t => t.status === 'todo').length
+  const completionPct = total > 0 ? Math.round((done / total) * 100) : 0
+
+  const now = new Date()
+  const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const chartData = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(now)
+    d.setDate(d.getDate() - (6 - i))
+    d.setHours(0, 0, 0, 0)
+    const nextDay = new Date(d)
+    nextDay.setDate(nextDay.getDate() + 1)
+    const count = tasks.filter(t => {
+      const created = new Date(t.created_at)
+      return created >= d && created < nextDay
+    }).length
+    return { day: dayLabels[d.getDay()], hours: count }
+  })
+
+  const totalThisWeek = chartData.reduce((sum, d) => sum + d.hours, 0)
+  const prevWeekData = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(now)
+    d.setDate(d.getDate() - (13 - i))
+    d.setHours(0, 0, 0, 0)
+    const nextDay = new Date(d)
+    nextDay.setDate(nextDay.getDate() + 1)
+    return tasks.filter(t => {
+      const created = new Date(t.created_at)
+      return created >= d && created < nextDay
+    }).length
+  })
+  const totalPrevWeek = prevWeekData.reduce((sum, d) => sum + d, 0)
+  const diff = totalThisWeek - totalPrevWeek
+
   return (
     <div className="bg-white rounded-2xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
       <div className="flex items-center justify-between mb-4">
@@ -453,13 +552,32 @@ export function TimeWidget() {
       </div>
 
       <div className="flex items-end gap-2 mb-4">
-        <span className="text-3xl font-extrabold text-gray-900 tracking-tight">7h 28m</span>
-        <span className="text-xs font-semibold text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded-full mb-1">+27m</span>
+        <span className="text-3xl font-extrabold text-gray-900 tracking-tight">{totalThisWeek} tasks</span>
+        {diff !== 0 && (
+          <span className={cn('text-xs font-semibold px-1.5 py-0.5 rounded-full mb-1', diff > 0 ? 'text-emerald-500 bg-emerald-50' : 'text-red-500 bg-red-50')}>
+            {diff > 0 ? '+' : ''}{diff}
+          </span>
+        )}
+      </div>
+
+      <div className="flex gap-3 mb-4">
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-emerald-400" />
+          <span className="text-[11px] text-gray-500">Done <span className="font-semibold text-gray-700">{done}</span></span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-amber-400" />
+          <span className="text-[11px] text-gray-500">Active <span className="font-semibold text-gray-700">{inProgress}</span></span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-gray-300" />
+          <span className="text-[11px] text-gray-500">To Do <span className="font-semibold text-gray-700">{todo}</span></span>
+        </div>
       </div>
 
       <div className="h-28">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={CHART_DATA} margin={{ top: 5, right: 0, left: -30, bottom: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 5, right: 0, left: -30, bottom: 0 }}>
             <defs>
               <linearGradient id="timeGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.15} />
