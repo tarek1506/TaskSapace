@@ -57,6 +57,7 @@ export interface TaskComment {
   user_id: string
   content: string
   created_at: string
+  parent_id: string | null
   // Joined
   user_name?: string
   user_email?: string
@@ -130,7 +131,7 @@ export interface AppNotification {
   workspace_id: string
   user_id: string
   task_id: string | null
-  action_type: 'task_created' | 'task_updated' | 'task_deleted' | 'comment_added'
+  action_type: 'task_created' | 'task_updated' | 'task_deleted' | 'comment_added' | 'comment_mentioned'
   details: {
     task_title?: string
     task_id?: string

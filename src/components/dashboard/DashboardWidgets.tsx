@@ -40,6 +40,8 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
         return <span><strong className="text-gray-900">{actor}</strong> updated &ldquo;{taskTitle}&rdquo;</span>
       case 'comment_added':
         return <span><strong className="text-gray-900">{actor}</strong> commented on &ldquo;{taskTitle}&rdquo;</span>
+      case 'comment_mentioned':
+        return <span><strong className="text-gray-900">{actor}</strong> mentioned you in &ldquo;{taskTitle}&rdquo;</span>
       default:
         return <span>New activity</span>
     }
