@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 import type { Workspace, WorkspaceMember, Task } from '@/types'
 
 interface OutletCtx {
@@ -20,7 +21,8 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 export function CalendarPage() {
-  const { workspace } = useOutletContext<OutletCtx>()
+  const { workspace, member, isOwner } = useOutletContext<OutletCtx>()
+  const { user } = useAuth()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
@@ -40,12 +42,25 @@ export function CalendarPage() {
   useEffect(() => {
     const fetchTasks = async () => {
       setLoading(true)
+
+      const { data: freshMember } = await supabase
+        .from('workspace_members')
+        .select('*')
+        .eq('workspace_id', workspace.id)
+        .eq('user_id', user?.id || '')
+        .single()
+
+      const currentMember = freshMember || member
+      const canViewAll = isOwner || currentMember.can_view_all_tasks
+
       const { data } = await supabase
         .from('tasks')
         .select('*')
         .eq('workspace_id', workspace.id)
         .not('due_date', 'is', null)
-      setTasks(data || [])
+
+      const allTasks = data || []
+      setTasks(canViewAll ? allTasks : allTasks.filter(t => t.assigned_to?.includes(user?.id || '')))
       setLoading(false)
     }
     fetchTasks()
