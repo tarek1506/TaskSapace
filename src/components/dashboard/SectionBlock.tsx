@@ -38,18 +38,18 @@ export function SectionBlock({
   }
 
   return (
-    <div className="bg-white">
+    <div className="bg-white dark:bg-gray-800">
       {/* Section Header */}
-      <div className="flex items-center justify-between py-4 border-b border-gray-100">
+      <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-gray-700">
         <div className="flex items-center gap-2.5">
           <div className={cn('w-7 h-7 rounded-md flex items-center justify-center text-xs', iconBg)}>
             {icon}
           </div>
-          <h2 className="text-lg font-bold text-gray-900">{title}</h2>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{title}</h2>
         </div>
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+          className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
         >
           <ChevronDown
             size={16}
@@ -70,33 +70,33 @@ export function SectionBlock({
                   className={cn(
                     'flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md transition-colors',
                     tab === st.id
-                      ? 'text-gray-900 font-semibold border-b-2 border-blue-500 rounded-none pb-[5px]'
-                      : 'text-gray-500 hover:text-gray-700'
+                      ? 'text-gray-900 dark:text-gray-100 font-semibold border-b-2 border-blue-500 rounded-none pb-[5px]'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                   )}
                 >
                   <span className="text-[13px]">{st.icon}</span>
                   <span>{st.label}</span>
                 </button>
               ))}
-              <button className="p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 ml-1">
+              <button className="p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 ml-1">
                 <Plus size={14} />
               </button>
             </div>
 
             {/* Utility Row */}
             <div className="flex items-center gap-1">
-              <button className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+              <button className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
                 <Filter size={13} />
                 <span>Filter</span>
               </button>
-              <button className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+              <button className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
                 <SortAsc size={13} />
                 <span>Sort</span>
               </button>
-              <button className="p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+              <button className="p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                 <Search size={13} />
               </button>
-              <button className="p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+              <button className="p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                 <MoreHorizontal size={13} />
               </button>
               {actions}

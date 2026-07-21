@@ -162,14 +162,14 @@ export function ProfilePage() {
                   id="avatar-input"
                 />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-800">Profile Photo</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Profile Photo</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     JPG, PNG, or GIF. Max 2MB.
                   </p>
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadingAvatar}
-                    className="mt-3 text-xs text-violet-600 hover:text-violet-700 font-medium flex items-center gap-1"
+                    className="mt-3 text-xs text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 font-medium flex items-center gap-1"
                   >
                     <Upload size={12} />
                     {avatarUrl ? 'Change photo' : 'Upload photo'}
@@ -186,13 +186,13 @@ export function ProfilePage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {error && (
-                <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+                <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-955/20 border border-red-200 dark:border-red-900/50 rounded-xl px-3 py-2">
                   {error}
                 </div>
               )}
               {success && (
-                <div className="text-sm text-green-600 bg-green-50 border border-green-200 rounded-xl px-3 py-2 flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                <div className="text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-emerald-955/20 border border-green-200 dark:border-emerald-900/50 rounded-xl px-3 py-2 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-green-500 dark:bg-emerald-400 rounded-full" />
                   {success}
                 </div>
               )}
@@ -232,15 +232,15 @@ export function ProfilePage() {
               <CardTitle>Account Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                <span className="text-sm text-gray-500">User ID</span>
-                <span className="text-sm font-mono text-gray-700 bg-gray-100 px-2 py-0.5 rounded">
+              <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-sm text-gray-500 dark:text-gray-400">User ID</span>
+                <span className="text-sm font-mono text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
                   {user?.id?.slice(0, 8)}…
                 </span>
               </div>
               <div className="flex items-center justify-between py-2">
-                <span className="text-sm text-gray-500">Account created</span>
-                <span className="text-sm text-gray-700">
+                <span className="text-sm text-gray-500 dark:text-gray-400">Account created</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">
                   {user?.created_at
                     ? new Date(user.created_at).toLocaleDateString('en-US', {
                         year: 'numeric',

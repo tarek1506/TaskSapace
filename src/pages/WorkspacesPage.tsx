@@ -103,22 +103,22 @@ export function WorkspacesPage() {
   }
 
   return (
-    <div className="min-h-screen gradient-bg flex flex-col">
+    <div className="min-h-screen gradient-bg dark:bg-[#0f1117] flex flex-col">
       {/* Fixed blurs */}
-      <div className="fixed top-0 left-0 w-80 h-80 bg-violet-200/30 rounded-full blur-3xl pointer-events-none" />
-      <div className="fixed bottom-0 right-0 w-96 h-96 bg-pink-200/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="fixed top-0 left-0 w-80 h-80 bg-violet-200/30 dark:bg-violet-900/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="fixed bottom-0 right-0 w-96 h-96 bg-pink-200/20 dark:bg-pink-900/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 sm:px-8 py-4 sm:py-5">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-200">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-200 dark:shadow-violet-900/30">
             <Zap size={18} className="text-white" />
           </div>
-          <span className="font-bold text-gray-900 text-lg">TaskSpace</span>
+          <span className="font-bold text-gray-900 dark:text-gray-100 text-lg">TaskSpace</span>
         </div>
         <button
           onClick={signOut}
-          className="text-sm text-gray-500 hover:text-gray-800 transition-colors"
+          className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100 transition-colors"
           id="btn-signout-workspaces"
         >
           Sign out
@@ -130,8 +130,8 @@ export function WorkspacesPage() {
         <div className="w-full mb-8 fade-in">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Your Workspaces</h1>
-              <p className="text-gray-500 mt-1 text-sm">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Your Workspaces</h1>
+              <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
                 Welcome back, {user?.user_metadata?.name || user?.email?.split('@')[0]} 👋
               </p>
             </div>
@@ -156,8 +156,8 @@ export function WorkspacesPage() {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-violet-100 mb-4">
               <Sparkles size={28} className="text-violet-500" />
             </div>
-            <h2 className="text-lg font-semibold text-gray-800 mb-2">No workspaces yet</h2>
-            <p className="text-gray-500 text-sm mb-6">Create your first workspace to get started</p>
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">No workspaces yet</h2>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">Create your first workspace to get started</p>
             <Button variant="primary" onClick={() => setShowCreate(true)} id="btn-create-first">
               <Plus size={16} /> Create Workspace
             </Button>
@@ -168,7 +168,7 @@ export function WorkspacesPage() {
               <button
                 key={ws.id}
                 onClick={() => navigate(`/workspace/${ws.id}/dashboard`)}
-                className="group text-left glass-card rounded-2xl p-5 hover:shadow-xl hover:shadow-violet-100 transition-all duration-300 hover:-translate-y-1 fade-in"
+                className="group text-left glass-card rounded-2xl p-5 hover:shadow-xl hover:shadow-violet-100 dark:hover:shadow-violet-900/20 transition-all duration-300 hover:-translate-y-1 fade-in bg-white/80 dark:bg-gray-800/80 dark:border dark:border-gray-700"
                 style={{ animationDelay: `${i * 60}ms` }}
                 id={`workspace-card-${ws.id}`}
               >
@@ -181,7 +181,7 @@ export function WorkspacesPage() {
 
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="font-semibold text-gray-900 text-base group-hover:text-violet-700 transition-colors">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-base group-hover:text-violet-700 dark:group-hover:text-violet-400 transition-colors">
                       {ws.name}
                     </h3>
                     <div className="flex items-center gap-3 mt-2">
@@ -197,7 +197,7 @@ export function WorkspacesPage() {
                   <ArrowRight size={16} className="text-gray-300 group-hover:text-violet-400 transition-colors mt-1" />
                 </div>
 
-                <div className="flex items-center gap-4 mt-4 text-xs text-gray-400">
+                <div className="flex items-center gap-4 mt-4 text-xs text-gray-400 dark:text-gray-500">
                   <span className="flex items-center gap-1">
                     <Calendar size={11} />
                     {formatDate(ws.created_at)}
@@ -219,7 +219,7 @@ export function WorkspacesPage() {
       >
         <div className="space-y-4">
           {createError && (
-            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+            <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 rounded-xl px-3 py-2">
               {createError}
             </div>
           )}

@@ -36,9 +36,9 @@ interface StatusBadgeProps {
 }
 
 const STATUS_STYLES = {
-  todo: { bg: '#F1F5F9', color: '#64748B', label: 'To Do' },
-  in_progress: { bg: '#FFFBEB', color: '#D97706', label: 'In Progress' },
-  done: { bg: '#F0FDF4', color: '#16A34A', label: 'Done' },
+  todo: { label: 'To Do', lightBg: '#F1F5F9', lightColor: '#64748B', darkClass: 'dark:bg-slate-800 dark:text-slate-200' },
+  in_progress: { label: 'In Progress', lightBg: '#FFFBEB', lightColor: '#D97706', darkClass: 'dark:bg-amber-950/70 dark:text-amber-300' },
+  done: { label: 'Done', lightBg: '#F0FDF4', lightColor: '#16A34A', darkClass: 'dark:bg-emerald-950/70 dark:text-emerald-300' },
 }
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
@@ -47,11 +47,12 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
     <span
       className={cn(
         'inline-flex items-center gap-1.5 text-xs font-medium rounded-full px-2.5 py-0.5',
+        s.darkClass,
         className
       )}
-      style={{ backgroundColor: s.bg, color: s.color }}
+      style={{ backgroundColor: s.lightBg, color: s.lightColor }}
     >
-      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: s.color }} />
+      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'currentColor' }} />
       {s.label}
     </span>
   )

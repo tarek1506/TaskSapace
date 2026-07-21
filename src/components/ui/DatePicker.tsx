@@ -165,7 +165,7 @@ export function DatePicker({
         <PopoverTrigger asChild>
           <Button
             variant="outline"
-            className="w-full justify-between text-left font-normal h-10 px-3 bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 text-gray-900"
+            className="w-full justify-between text-left font-normal h-10 px-3 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 text-gray-900 dark:text-gray-100"
             disabled={disabled}
             id={id}
           >
@@ -175,22 +175,22 @@ export function DatePicker({
             <ChevronDownIcon className="h-4 w-4 text-gray-400" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-3 bg-white border border-gray-200 shadow-lg rounded-xl max-h-[calc(100vh-2rem)] overflow-y-auto scrollbar-thin" align="start">
+        <PopoverContent className="w-auto p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-xl max-h-[calc(100vh-2rem)] overflow-y-auto scrollbar-thin" align="start">
           <div style={{ minWidth: "280px" }}>
             {/* Header */}
             <div className="flex items-center justify-between mb-2">
               <button
                 onClick={goToPrevMonth}
-                className="h-7 w-7 p-0 bg-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex items-center justify-center transition-colors"
+                className="h-7 w-7 p-0 bg-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg flex items-center justify-center transition-colors"
               >
                 <ChevronLeftIcon className="h-4 w-4" />
               </button>
-              <span className="text-sm font-medium text-gray-900">
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                 {monthName} {year}
               </span>
               <button
                 onClick={goToNextMonth}
-                className="h-7 w-7 p-0 bg-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex items-center justify-center transition-colors"
+                className="h-7 w-7 p-0 bg-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg flex items-center justify-center transition-colors"
               >
                 <ChevronRightIcon className="h-4 w-4" />
               </button>
@@ -226,10 +226,10 @@ export function DatePicker({
                       ${selected 
                         ? "bg-violet-600 text-white hover:bg-violet-700" 
                         : today 
-                          ? "bg-gray-100 text-gray-900" 
+                          ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100" 
                           : past 
-                            ? "text-gray-300 cursor-not-allowed" 
-                            : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                            ? "text-gray-300 dark:text-gray-600 cursor-not-allowed" 
+                            : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
                       }
                     `}
                   >
@@ -240,18 +240,18 @@ export function DatePicker({
             </div>
 
             {showTime && (
-              <div className="mt-2 pt-2 border-t border-gray-100">
+              <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
                 <div className="flex items-center gap-2 mb-1.5">
-                  <span className="text-xs text-gray-500 font-medium">Time</span>
-                  <span className="text-xs font-semibold text-gray-900">
+                  <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Time</span>
+                  <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
                     {getDisplayHour()}:{(timeStr.split(':')[1] || '00')} {getDisplayAmPm()}
                   </span>
                 </div>
                 <div className="flex gap-2">
                   {/* Hours 1-12 */}
                   <div className="flex-1">
-                    <div className="text-[10px] text-gray-400 font-medium mb-0.5 text-center">Hour</div>
-                    <div className="h-24 overflow-y-auto scrollbar-thin rounded-lg border border-gray-100 bg-gray-50/50">
+                    <div className="text-[10px] text-gray-400 dark:text-gray-500 font-medium mb-0.5 text-center">Hour</div>
+                    <div className="h-24 overflow-y-auto scrollbar-thin rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/50">
                       {Array.from({ length: 12 }, (_, i) => i + 1).map(h => {
                         const active = getDisplayHour() === h
                         return (
@@ -274,8 +274,8 @@ export function DatePicker({
                   </div>
                   {/* Minutes */}
                   <div className="flex-1">
-                    <div className="text-[10px] text-gray-400 font-medium mb-0.5 text-center">Min</div>
-                    <div className="h-24 overflow-y-auto scrollbar-thin rounded-lg border border-gray-100 bg-gray-50/50">
+                    <div className="text-[10px] text-gray-400 dark:text-gray-500 font-medium mb-0.5 text-center">Min</div>
+                    <div className="h-24 overflow-y-auto scrollbar-thin rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/50">
                       {Array.from({ length: 12 }, (_, i) => i * 5).map(m => {
                         const mStr = String(m).padStart(2, '0')
                         const active = timeStr.split(':')[1] === mStr
@@ -303,8 +303,8 @@ export function DatePicker({
                   </div>
                   {/* AM/PM */}
                   <div className="w-12">
-                    <div className="text-[10px] text-gray-400 font-medium mb-0.5 text-center">&nbsp;</div>
-                    <div className="rounded-lg border border-gray-100 bg-gray-50/50 overflow-hidden">
+                    <div className="text-[10px] text-gray-400 dark:text-gray-500 font-medium mb-0.5 text-center">&nbsp;</div>
+                    <div className="rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/50 overflow-hidden">
                       {['AM', 'PM'].map(ap => (
                         <button
                           key={ap}

@@ -23,7 +23,8 @@ export function Switch({ checked, onChange, label, disabled, id, className }: Sw
         onClick={() => !disabled && onChange(!checked)}
         className={cn(
           'relative w-10 h-5.5 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-1',
-          checked ? 'bg-violet-600' : 'bg-gray-200'
+          'dark:focus:ring-offset-gray-900',
+          checked ? 'bg-violet-600' : 'bg-gray-200 dark:bg-gray-600'
         )}
         style={{ height: '1.375rem' }}
       >
@@ -35,7 +36,7 @@ export function Switch({ checked, onChange, label, disabled, id, className }: Sw
           style={{ width: '1.125rem', height: '1.125rem' }}
         />
       </button>
-      {label && <span className="text-sm text-gray-700 select-none">{label}</span>}
+      {label && <span className="text-sm text-gray-700 dark:text-gray-300 select-none">{label}</span>}
     </label>
   )
 }
@@ -55,11 +56,11 @@ export function PermissionToggle({
   return (
     <div className={cn(
       'flex items-center justify-between p-3 rounded-xl transition-colors',
-      checked ? 'bg-violet-50' : 'bg-gray-50'
+      checked ? 'bg-violet-50 dark:bg-violet-950/50' : 'bg-gray-50 dark:bg-gray-700/50'
     )}>
       <div>
-        <p className="text-sm font-medium text-gray-800">{label}</p>
-        {description && <p className="text-xs text-gray-500 mt-0.5">{description}</p>}
+        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{label}</p>
+        {description && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{description}</p>}
       </div>
       <Switch
         id={id}

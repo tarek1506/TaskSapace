@@ -55,8 +55,8 @@ export function TaskRow({ task, onClick, onStatusChange, className }: TaskRowPro
       {/* Title */}
       <span
         className={cn(
-          'flex-1 text-sm font-medium text-gray-800 truncate',
-          isDone && 'line-through text-gray-400'
+          'flex-1 text-sm font-medium text-gray-800 dark:text-gray-100 truncate',
+          isDone && 'line-through text-gray-400 dark:text-gray-500'
         )}
       >
         {task.title}
@@ -67,7 +67,7 @@ export function TaskRow({ task, onClick, onStatusChange, className }: TaskRowPro
         <span
           className={cn(
             'text-xs font-medium hidden sm:block',
-            overdue ? 'text-red-500' : 'text-gray-400'
+            overdue ? 'text-red-500 dark:text-red-400' : 'text-gray-400 dark:text-gray-400'
           )}
         >
           {formatDate(task.due_date)}
@@ -75,7 +75,7 @@ export function TaskRow({ task, onClick, onStatusChange, className }: TaskRowPro
       )}
 
       {/* Attachment count */}
-      <div className="flex items-center gap-1 text-gray-400 text-xs">
+      <div className="flex items-center gap-1 text-gray-400 dark:text-gray-400 text-xs">
         <Paperclip size={13} />
         <span>{task.comments_count ?? 0}</span>
       </div>

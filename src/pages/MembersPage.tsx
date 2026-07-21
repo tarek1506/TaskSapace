@@ -294,7 +294,7 @@ export function MembersPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl">
           {/* Members list */}
           <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+            <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               Team Members
             </h2>
             {loading ? (
@@ -329,7 +329,7 @@ export function MembersPage() {
                           size="md"
                         />
                         {isActive && (
-                          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-white" title="Active now" />
+                          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-white dark:border-gray-800" title="Active now" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -339,7 +339,7 @@ export function MembersPage() {
                               type="text"
                               value={editingName}
                               onChange={(e) => setEditingName(e.target.value)}
-                              className="flex-1 px-2 py-1 text-sm rounded-lg border border-violet-300 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                              className="flex-1 px-2 py-1 text-sm rounded-lg border border-violet-300 dark:border-violet-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-400"
                               autoFocus
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleSaveName(m.id)
@@ -348,37 +348,37 @@ export function MembersPage() {
                             />
                             <button
                               onClick={(e) => { e.stopPropagation(); handleSaveName(m.id) }}
-                              className="p-1 text-emerald-500 hover:bg-emerald-50 rounded"
+                              className="p-1 text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded"
                               disabled={savingName}
                             >
                               <Check size={14} />
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); handleCancelEditName() }}
-                              className="p-1 text-gray-400 hover:bg-gray-100 rounded"
+                              className="p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                             >
                               <X size={14} />
                             </button>
                           </div>
                         ) : (
                           <div className="flex items-center gap-2">
-                            <p className="text-sm font-semibold text-gray-900 truncate">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                               {m.user_name || m.user_email?.split('@')[0]}
                             </p>
                             {isActive && (
-                              <span className="text-xs text-emerald-500 font-medium">Active</span>
+                              <span className="text-xs text-emerald-500 dark:text-emerald-400 font-medium">Active</span>
                             )}
                             {m.role === 'owner' && (
                               <Crown size={13} className="text-amber-500 flex-shrink-0" />
                             )}
                             {m.must_change_password && (
-                              <span className="text-xs bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full">
+                              <span className="text-xs bg-orange-100 text-orange-600 dark:bg-orange-950/60 dark:text-orange-400 px-1.5 py-0.5 rounded-full">
                                 Must change pw
                               </span>
                             )}
                           </div>
                         )}
-                        <p className="text-xs text-gray-400 truncate">{m.user_email}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{m.user_email}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         {!isEditing && (
@@ -387,7 +387,7 @@ export function MembersPage() {
                               e.stopPropagation()
                               handleStartEditName(m)
                             }}
-                            className="p-1.5 text-gray-300 hover:text-violet-500 hover:bg-violet-50 rounded-lg transition-colors"
+                            className="p-1.5 text-gray-300 dark:text-gray-500 hover:text-violet-500 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/50 rounded-lg transition-colors"
                             title="Edit name"
                           >
                             <Pencil size={13} />
@@ -395,8 +395,8 @@ export function MembersPage() {
                         )}
                         <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                           m.role === 'owner'
-                            ? 'bg-violet-100 text-violet-700'
-                            : 'bg-gray-100 text-gray-600'
+                            ? 'bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300'
+                            : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
                         }`}>
                           {m.role}
                         </span>
@@ -406,7 +406,7 @@ export function MembersPage() {
                               e.stopPropagation()
                               setRemovingMember(m)
                             }}
-                            className="p-1.5 text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-1.5 text-gray-300 dark:text-gray-500 hover:text-red-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-lg transition-colors"
                             id={`remove-member-${m.id}`}
                           >
                             <Trash2 size={13} />
@@ -423,7 +423,7 @@ export function MembersPage() {
           {/* Permissions panel */}
           {selectedMember && selectedMember.role !== 'owner' && (
             <div className="space-y-3 fade-in">
-              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+              <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Permissions for {selectedMember.user_name || selectedMember.user_email?.split('@')[0]}
               </h2>
               <Card>
@@ -442,7 +442,7 @@ export function MembersPage() {
                   ))}
                 </CardContent>
               </Card>
-              <p className="text-xs text-gray-400 text-center">
+              <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
                 Changes are saved instantly
               </p>
             </div>
@@ -452,8 +452,8 @@ export function MembersPage() {
             <Card className="fade-in">
               <CardContent className="flex flex-col items-center justify-center py-10 text-center gap-3">
                 <Crown size={28} className="text-amber-400" />
-                <p className="text-sm font-medium text-gray-700">Workspace Owner</p>
-                <p className="text-xs text-gray-400">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-200">Workspace Owner</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">
                   Owners have full access to all features and cannot be restricted.
                 </p>
               </CardContent>
@@ -516,7 +516,7 @@ export function MembersPage() {
             }
             id="invite-password"
           />
-          <p className="text-xs text-gray-400 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+          <p className="text-xs text-gray-500 dark:text-gray-400 bg-amber-50 dark:bg-amber-955/20 border border-amber-200 dark:border-amber-900/50 rounded-xl px-3 py-2">
             💡 In production, use a Supabase Edge Function with the Admin API to invite users
             without exposing admin credentials on the client.
           </p>

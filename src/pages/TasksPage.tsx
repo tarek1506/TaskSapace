@@ -37,9 +37,9 @@ const COLUMNS: { status: TaskStatus; label: string; dotColor: string }[] = [
 const AVATAR_COLORS = ['bg-pink-400', 'bg-purple-400', 'bg-blue-400', 'bg-teal-400', 'bg-emerald-400', 'bg-indigo-400', 'bg-amber-400', 'bg-rose-400']
 
 const PRIORITY_BADGE: Record<TaskPriority, { label: string; icon: string; color: string; bg: string } | null> = {
-  high: { label: 'High', icon: '↑', color: 'text-pink-600', bg: 'bg-pink-50' },
-  medium: { label: 'Medium', icon: '→', color: 'text-amber-600', bg: 'bg-amber-50' },
-  low: { label: 'Low', icon: '↓', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  high: { label: 'High', icon: '↑', color: 'text-pink-600', bg: 'bg-pink-50 dark:bg-pink-950/50' },
+  medium: { label: 'Medium', icon: '→', color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-950/50' },
+  low: { label: 'Low', icon: '↓', color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/50' },
   none: null,
 }
 
@@ -239,32 +239,32 @@ export function TasksPage() {
         {/* Toolbar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pt-10 md:pt-0">
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl sm:text-[28px] font-bold text-gray-900">Tasks</h2>
-            <span className="text-[11px] font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{filteredTasks.length}</span>
+            <h2 className="text-2xl sm:text-[28px] font-bold text-gray-900 dark:text-gray-100">Tasks</h2>
+            <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">{filteredTasks.length}</span>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             {/* Search */}
             <div className="relative flex-1 sm:flex-none">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search tasks..."
-                className="w-full sm:w-56 pl-9 pr-4 py-2 text-sm rounded-full bg-gray-100 border-0 focus:outline-none focus:ring-2 focus:ring-purple-200 placeholder-gray-400"
+                className="w-full sm:w-56 pl-9 pr-4 py-2 text-sm rounded-full bg-gray-100 dark:bg-gray-700 border-0 focus:outline-none focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-800 placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-gray-100"
               />
             </div>
 
             {/* Assignee Filter */}
             <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-              <SelectTrigger className="w-full sm:w-48 h-10 rounded-full bg-gray-100! border-0! ring-0! outline-none! focus:ring-0! focus:outline-none! focus:bg-gray-100! text-sm shadow-none! [&>span]:line-clamp-1">
+              <SelectTrigger className="w-full sm:w-48 h-10 rounded-full bg-gray-100! dark:bg-gray-700! border-0! ring-0! outline-none! focus:ring-0! focus:outline-none! focus:bg-gray-100! text-sm shadow-none! [&>span]:line-clamp-1">
                 <SelectValue placeholder="All members" />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
                 <SelectItem value="all">
                   <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center">
-                      <Users size={10} className="text-gray-500" />
+                    <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                      <Users size={10} className="text-gray-500 dark:text-gray-400" />
                     </div>
                     <span>All members</span>
                   </div>
@@ -281,7 +281,7 @@ export function TasksPage() {
             </Select>
 
             {/* View Tabs */}
-            <div className="flex items-center bg-gray-100 rounded-full p-0.5">
+            <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-full p-0.5">
               {TABS.map(tab => (
                 <button
                   key={tab.id}
@@ -289,8 +289,8 @@ export function TasksPage() {
                   className={cn(
                     'flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-full transition-all',
                     viewMode === tab.id
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
+                      ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                   )}
                 >
                   {tab.icon}
@@ -325,14 +325,14 @@ export function TasksPage() {
                   {/* Column Header */}
                   <div className="flex items-center gap-2 mb-3 px-1">
                     <div className={cn('w-2 h-2 rounded-full', dotColor)} />
-                    <span className="text-sm font-semibold text-gray-700">{label}</span>
-                    <span className="text-[11px] font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{colTasks.length}</span>
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{label}</span>
+                    <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">{colTasks.length}</span>
                   </div>
 
                   {/* Column Body */}
                   <div className={cn(
                     "flex-1 rounded-2xl p-3 space-y-2 overflow-y-auto scrollbar-thin transition-colors",
-                    isDragging ? 'bg-purple-50/50 ring-1 ring-purple-200' : 'bg-gray-100/80'
+                    isDragging ? 'bg-purple-50/50 dark:bg-purple-950/20 ring-1 ring-purple-200 dark:ring-purple-800' : 'bg-gray-100/80 dark:bg-gray-800'
                   )}>
                     {colTasks.map(task => {
                       const isBeingDragged = draggedTaskId === task.id
@@ -352,7 +352,7 @@ export function TasksPage() {
                             onDragOver={(e) => handleCardDragOver(e, task.id)}
                             onClick={() => navigate(`/workspace/${workspace.id}/tasks/${task.id}`)}
                             className={cn(
-                              "bg-white rounded-xl p-4 cursor-grab active:cursor-grabbing transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:border-gray-300 border border-gray-200",
+                              "bg-white dark:bg-gray-800 rounded-xl p-4 cursor-grab active:cursor-grabbing transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:border-gray-300 dark:hover:border-gray-600 border border-gray-200 dark:border-gray-700",
                               isBeingDragged && "opacity-40 scale-95"
                             )}
                           >
@@ -379,15 +379,15 @@ export function TasksPage() {
                           )}
 
                           {/* Title */}
-                          <h3 className="text-sm font-semibold text-gray-900 mb-1 leading-snug">{task.title}</h3>
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1 leading-snug">{task.title}</h3>
 
                           {/* Description */}
                           {task.description && (
-                            <p className="text-xs text-gray-500 mb-3 line-clamp-2">{task.description}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">{task.description}</p>
                           )}
 
                           {/* Footer */}
-                          <div className="flex items-center justify-between pt-2 mt-1 border-t border-gray-100">
+                          <div className="flex items-center justify-between pt-2 mt-1 border-t border-gray-100 dark:border-gray-700">
                             <div className="flex items-center">
                               {assignees.slice(0, 3).map((a, i) => (
                                 <Avatar
@@ -396,24 +396,24 @@ export function TasksPage() {
                                   name={a.name}
                                   src={a.avatar_url}
                                   size="xs"
-                                  className={cn('ring-2 ring-white cursor-pointer', i > 0 && '-ml-1')}
+                                  className={cn('ring-2 ring-white dark:ring-gray-800 cursor-pointer', i > 0 && '-ml-1')}
                                 />
                               ))}
                               {assignees.length > 3 && (
-                                <div className="w-5 h-5 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[7px] font-medium text-gray-500 -ml-1">
+                                <div className="w-5 h-5 rounded-full border-2 border-white dark:border-gray-800 bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-[7px] font-medium text-gray-500 dark:text-gray-400 -ml-1">
                                   +{assignees.length - 3}
                                 </div>
                               )}
                             </div>
                             <div className="flex items-center gap-2.5">
                               {(task.comments_count ?? 0) > 0 && (
-                                <span className="flex items-center gap-1 text-[11px] text-gray-400">
+                                <span className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-gray-500">
                                   <MessageCircle size={10} />
                                   {task.comments_count}
                                 </span>
                               )}
                               {task.due_date && (
-                                <span className="flex items-center gap-1 text-[11px] text-gray-400">
+                                <span className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-gray-500">
                                   <Calendar size={10} />
                                   {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                 </span>
@@ -429,15 +429,15 @@ export function TasksPage() {
                     })}
 
                     {colTasks.length === 0 && !isDragging && (
-                      <div className="h-24 flex items-center justify-center border-2 border-dashed border-gray-200 rounded-xl transition-colors">
-                        <p className="text-xs text-gray-400">Drop tasks here</p>
+                      <div className="h-24 flex items-center justify-center border-2 border-dashed border-gray-200 dark:border-gray-600 rounded-xl transition-colors">
+                        <p className="text-xs text-gray-400 dark:text-gray-500">Drop tasks here</p>
                       </div>
                     )}
 
                     {canCreate && (
                       <button
                         onClick={() => { setEditingTask(null); setShowTaskModal(true) }}
-                        className="w-full py-2.5 text-xs text-gray-400 hover:text-purple-600 hover:bg-white rounded-xl border border-dashed border-gray-200 transition-colors flex items-center justify-center gap-1.5"
+                        className="w-full py-2.5 text-xs text-gray-400 dark:text-gray-500 hover:text-purple-600 hover:bg-white dark:hover:bg-gray-700 rounded-xl border border-dashed border-gray-200 dark:border-gray-600 transition-colors flex items-center justify-center gap-1.5"
                       >
                         <Plus size={12} /> Add task
                       </button>
@@ -448,10 +448,10 @@ export function TasksPage() {
             })}
           </div>
         ) : viewMode === 'table' ? (
-          <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden">
             <table className="w-full">
-              <thead className="border-b border-gray-100">
-                <tr className="text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+              <thead className="border-b border-gray-100 dark:border-gray-700">
+                <tr className="text-left text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                   <th className="px-5 py-3">Task</th>
                   <th className="px-5 py-3">Status</th>
                   <th className="px-5 py-3">Priority</th>
@@ -459,21 +459,21 @@ export function TasksPage() {
                   <th className="px-5 py-3">Due Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                 {filteredTasks.map(task => {
                   const assignees = getAssignees(task.assigned_to || [])
                   const statusConf = COLUMNS.find(c => c.status === task.status)
                   return (
                     <tr
                       key={task.id}
-                      className="hover:bg-gray-50/50 cursor-pointer transition-colors"
+                      className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
                       onClick={() => navigate(`/workspace/${workspace.id}/tasks/${task.id}`)}
                     >
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2.5">
-                          <GripVertical size={14} className="text-gray-300 cursor-grab" />
+                          <GripVertical size={14} className="text-gray-300 dark:text-gray-600 cursor-grab" />
                           <div>
-                            <span className="text-sm font-medium text-gray-900">{task.title}</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{task.title}</span>
                             {task.project_label && (
                               <span
                                 className="ml-2 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
@@ -484,7 +484,7 @@ export function TasksPage() {
                             )}
                           </div>
                           {(task.comments_count ?? 0) > 0 && (
-                            <span className="flex items-center gap-1 text-[11px] text-gray-400 ml-auto">
+                            <span className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-gray-500 ml-auto">
                               <MessageCircle size={10} />
                               {task.comments_count}
                             </span>
@@ -508,7 +508,7 @@ export function TasksPage() {
                             {PRIORITY_BADGE[task.priority]!.icon} {PRIORITY_BADGE[task.priority]!.label}
                           </span>
                         ) : (
-                          <span className="text-[10px] text-gray-400">–</span>
+                          <span className="text-[10px] text-gray-400 dark:text-gray-500">–</span>
                         )}
                       </td>
                       <td className="px-5 py-3.5">
@@ -520,11 +520,11 @@ export function TasksPage() {
                               name={a.name}
                               src={a.avatar_url}
                               size="xs"
-                              className={cn('ring-2 ring-white cursor-pointer', i > 0 && '-ml-1')}
+                              className={cn('ring-2 ring-white dark:ring-gray-800 cursor-pointer', i > 0 && '-ml-1')}
                             />
                           ))}
                           {assignees.length > 3 && (
-                            <div className="w-5 h-5 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[7px] font-medium text-gray-500 -ml-1">
+                            <div className="w-5 h-5 rounded-full border-2 border-white dark:border-gray-800 bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-[7px] font-medium text-gray-500 dark:text-gray-400 -ml-1">
                               +{assignees.length - 3}
                             </div>
                           )}
@@ -532,7 +532,7 @@ export function TasksPage() {
                       </td>
                       <td className="px-5 py-3.5">
                         {task.due_date && (
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
                             {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                           </span>
                         )}
@@ -543,26 +543,26 @@ export function TasksPage() {
               </tbody>
             </table>
             {filteredTasks.length === 0 && (
-              <div className="text-center py-12 text-gray-400">
+              <div className="text-center py-12 text-gray-400 dark:text-gray-500">
                 <CheckCircle2 size={32} className="mx-auto mb-2 opacity-30" />
                 <p className="text-sm">No tasks found</p>
               </div>
             )}
           </div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden divide-y divide-gray-50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden divide-y divide-gray-50 dark:divide-gray-700">
             {filteredTasks.map(task => {
               const assignees = getAssignees(task.assigned_to || [])
               const statusConf = COLUMNS.find(c => c.status === task.status)
               return (
                 <div
                   key={task.id}
-                  className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50/50 transition-colors cursor-pointer"
+                  className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50/50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
                   onClick={() => navigate(`/workspace/${workspace.id}/tasks/${task.id}`)}
                 >
-                  <GripVertical size={14} className="text-gray-300 cursor-grab shrink-0" />
+                  <GripVertical size={14} className="text-gray-300 dark:text-gray-600 cursor-grab shrink-0" />
                   <div className={cn("w-2 h-2 rounded-full shrink-0", statusConf?.dotColor)} />
-                  <span className="flex-1 text-sm font-medium text-gray-900 truncate">{task.title}</span>
+                  <span className="flex-1 text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{task.title}</span>
                   {task.project_label && (
                     <span
                       className="text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0"
@@ -577,7 +577,7 @@ export function TasksPage() {
                     </span>
                   )}
                   {(task.comments_count ?? 0) > 0 && (
-                    <span className="flex items-center gap-1 text-[11px] text-gray-400 shrink-0">
+                    <span className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-gray-500 shrink-0">
                       <MessageCircle size={10} />
                       {task.comments_count}
                     </span>
@@ -590,12 +590,12 @@ export function TasksPage() {
                         name={a.name}
                         src={a.avatar_url}
                         size="xs"
-                        className={cn('ring-2 ring-white cursor-pointer', i > 0 && '-ml-1')}
+                        className={cn('ring-2 ring-white dark:ring-gray-800 cursor-pointer', i > 0 && '-ml-1')}
                       />
                     ))}
                   </div>
                   {task.due_date && (
-                    <span className="text-xs text-gray-400 w-16 text-right shrink-0">
+                    <span className="text-xs text-gray-400 dark:text-gray-500 w-16 text-right shrink-0">
                       {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </span>
                   )}
@@ -603,7 +603,7 @@ export function TasksPage() {
               )
             })}
             {filteredTasks.length === 0 && (
-              <div className="text-center py-12 text-gray-400">
+              <div className="text-center py-12 text-gray-400 dark:text-gray-500">
                 <CheckCircle2 size={32} className="mx-auto mb-2 opacity-30" />
                 <p className="text-sm">No tasks found</p>
               </div>

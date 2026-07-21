@@ -317,25 +317,25 @@ export function CommentThread({ taskId, workspaceId, taskTitle, members, ownerId
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm font-semibold text-gray-800">
+              <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
                 {comment.user_name}
               </span>
-              <span className="text-xs text-gray-400">{timeAgo(comment.created_at)}</span>
+              <span className="text-xs text-gray-400 dark:text-gray-400">{timeAgo(comment.created_at)}</span>
               <button
                 onClick={() => handleReply(comment.id, comment.user_name || 'User')}
-                className="ml-auto flex items-center gap-1 text-[11px] text-gray-400 hover:text-violet-600 transition-colors"
+                className="ml-auto flex items-center gap-1 text-[11px] text-gray-400 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
               >
                 <Reply size={11} />
                 Reply
               </button>
             </div>
-            <div className="text-sm text-gray-700 bg-gray-50 rounded-xl px-3.5 py-2.5 leading-relaxed whitespace-pre-wrap">
+            <div className="text-sm text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-800/80 border border-transparent dark:border-gray-700/60 rounded-xl px-3.5 py-2.5 leading-relaxed whitespace-pre-wrap">
               {renderContent(comment.content)}
             </div>
           </div>
         </div>
         {replies.length > 0 && (
-          <div className="ml-9 mt-2 border-l-2 border-violet-100 pl-3 space-y-3">
+          <div className="ml-9 mt-2 border-l-2 border-violet-100 dark:border-violet-900/50 pl-3 space-y-3">
             {replies.map(reply => renderComment(reply, true))}
           </div>
         )}
@@ -346,8 +346,8 @@ export function CommentThread({ taskId, workspaceId, taskTitle, members, ownerId
   return (
     <div className="mt-6">
       <div className="flex items-center gap-2 mb-4">
-        <MessageCircle size={16} className="text-gray-400" />
-        <span className="text-sm font-semibold text-gray-700">
+        <MessageCircle size={16} className="text-gray-400 dark:text-gray-400" />
+        <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
           Comments {comments.length > 0 && `(${comments.length})`}
         </span>
       </div>
@@ -355,10 +355,10 @@ export function CommentThread({ taskId, workspaceId, taskTitle, members, ownerId
       {/* Comment list */}
       <div className="space-y-4 mb-4 max-h-80 overflow-y-auto scrollbar-thin pr-1">
         {loading && comments.length === 0 && (
-          <div className="text-xs text-gray-400 text-center py-4">Loading comments…</div>
+          <div className="text-xs text-gray-400 dark:text-gray-400 text-center py-4">Loading comments…</div>
         )}
         {!loading && comments.length === 0 && (
-          <div className="text-xs text-gray-400 text-center py-6 bg-gray-50 rounded-xl">
+          <div className="text-xs text-gray-400 dark:text-gray-400 text-center py-6 bg-gray-50 dark:bg-gray-800/60 rounded-xl">
             No comments yet. Be the first to comment!
           </div>
         )}
@@ -379,12 +379,12 @@ export function CommentThread({ taskId, workspaceId, taskTitle, members, ownerId
         <div className="flex-1 flex gap-2">
           <div className="flex-1 relative">
             {replyingTo && (
-              <div className="flex items-center gap-1.5 mb-1.5 text-[11px] text-violet-600 bg-violet-50 rounded-lg px-2.5 py-1">
+              <div className="flex items-center gap-1.5 mb-1.5 text-[11px] text-violet-600 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/60 rounded-lg px-2.5 py-1">
                 <Reply size={10} />
                 Replying to <span className="font-semibold">{replyingTo.name}</span>
                 <button
                   onClick={() => { setReplyingTo(null); setNewComment('') }}
-                  className="ml-auto text-violet-400 hover:text-violet-600"
+                  className="ml-auto text-violet-400 dark:text-violet-400 hover:text-violet-600 dark:hover:text-violet-200"
                 >
                   <X size={10} />
                 </button>
@@ -393,7 +393,7 @@ export function CommentThread({ taskId, workspaceId, taskTitle, members, ownerId
 
             {/* Mention dropdown */}
             {showMentions && filteredMentions.length > 0 && (
-              <div className="absolute bottom-full left-0 mb-1 w-64 max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-lg z-50">
+              <div className="absolute bottom-full left-0 mb-1 w-64 max-h-48 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50">
                 {filteredMentions.map((a, i) => (
                   <button
                     key={a.user_id}
@@ -401,14 +401,14 @@ export function CommentThread({ taskId, workspaceId, taskTitle, members, ownerId
                     onMouseDown={(e) => { e.preventDefault(); insertMention(a.user_name || a.user_email || '') }}
                     className={cn(
                       'w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors',
-                      i === mentionIndex ? 'bg-violet-50 text-violet-700' : 'text-gray-700 hover:bg-gray-50'
+                      i === mentionIndex ? 'bg-violet-50 text-violet-700 dark:bg-violet-950 dark:text-violet-300' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                     )}
                   >
                     <Avatar name={a.user_name || a.user_email} src={a.user_avatar_url} size="xs" />
                     <div className="min-w-0">
                       <div className="font-medium truncate text-xs">{a.user_name || a.user_email}</div>
                       {a.user_name && a.user_email && (
-                        <div className="text-[10px] text-gray-400 truncate">{a.user_email}</div>
+                        <div className="text-[10px] text-gray-400 dark:text-gray-400 truncate">{a.user_email}</div>
                       )}
                     </div>
                   </button>
@@ -423,7 +423,7 @@ export function CommentThread({ taskId, workspaceId, taskTitle, members, ownerId
               onKeyDown={handleKeyDown}
               placeholder={replyingTo ? `Reply to ${replyingTo.name}…` : 'Write a comment… (Ctrl+Enter to submit)'}
               rows={2}
-              className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400 focus:bg-white transition-all"
+              className="w-full resize-none rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400 focus:bg-white dark:focus:bg-gray-700 transition-all"
               id={`comment-input-${taskId}`}
             />
           </div>

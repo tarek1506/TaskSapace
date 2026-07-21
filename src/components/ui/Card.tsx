@@ -9,10 +9,10 @@ export function Card({ className, glass = false, children, ...props }: CardProps
   return (
     <div
       className={cn(
-        'rounded-2xl border border-white/80',
+        'rounded-2xl border border-white/80 dark:border-gray-700/80',
         glass
           ? 'glass-card'
-          : 'bg-white shadow-sm shadow-gray-100',
+          : 'bg-white shadow-sm shadow-gray-100 dark:bg-gray-800 dark:shadow-gray-900/50',
         className
       )}
       {...props}
@@ -24,7 +24,7 @@ export function Card({ className, glass = false, children, ...props }: CardProps
 
 export function CardHeader({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('px-6 py-4 border-b border-gray-100', className)} {...props}>
+    <div className={cn('px-6 py-4 border-b border-gray-100 dark:border-gray-700', className)} {...props}>
       {children}
     </div>
   )
@@ -40,7 +40,7 @@ export function CardContent({ className, children, ...props }: React.HTMLAttribu
 
 export function CardTitle({ className, children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h3 className={cn('text-base font-semibold text-gray-900', className)} {...props}>
+    <h3 className={cn('text-base font-semibold text-gray-900 dark:text-gray-100', className)} {...props}>
       {children}
     </h3>
   )

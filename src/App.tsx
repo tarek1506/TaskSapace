@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 import { ProtectedRoute, PublicRoute } from '@/components/guards/RouteGuard'
 import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout'
 import { LoginPage } from '@/pages/LoginPage'
@@ -17,7 +18,8 @@ import { TimelinePage } from '@/pages/TimelinePage'
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={
@@ -56,7 +58,8 @@ function App() {
           <Route path="/" element={<Navigate to="/workspaces" replace />} />
           <Route path="*" element={<Navigate to="/workspaces" replace />} />
         </Routes>
-      </AuthProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   )
 }

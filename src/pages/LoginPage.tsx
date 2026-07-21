@@ -30,26 +30,26 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
+    <div className="min-h-screen gradient-bg flex items-center justify-center p-4 dark:bg-[#0f1117]">
       {/* Decorative circles */}
-      <div className="fixed top-20 left-20 w-72 h-72 bg-violet-200/30 rounded-full blur-3xl pointer-events-none" />
-      <div className="fixed bottom-20 right-20 w-96 h-96 bg-pink-200/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="fixed top-20 left-20 w-72 h-72 bg-violet-200/30 dark:bg-violet-900/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="fixed bottom-20 right-20 w-96 h-96 bg-pink-200/20 dark:bg-pink-900/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-md fade-in">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 shadow-lg shadow-violet-200 mb-4">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 shadow-lg shadow-violet-200 dark:shadow-violet-900/30 mb-4">
             <Zap size={28} className="text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Welcome to TaskSpace</h1>
-          <p className="text-gray-500 mt-1 text-sm">Sign in to your workspace</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Welcome to TaskSpace</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">Sign in to your workspace</p>
         </div>
 
         {/* Card */}
-        <div className="glass-card rounded-3xl p-8">
+        <div className="glass-card rounded-3xl p-8 bg-white/80 dark:bg-gray-800/80 dark:border dark:border-gray-700 backdrop-blur-xl">
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-center">
+              <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3 text-center">
                 {error}
               </div>
             )}
@@ -98,7 +98,7 @@ export function LoginPage() {
             </Button>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
+          <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
             Don't have an account?{' '}
             <Link
               to="/signup"
@@ -111,7 +111,7 @@ export function LoginPage() {
         </div>
 
         {/* Demo hint */}
-        <p className="text-center text-xs text-gray-400 mt-4">
+        <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-4">
           Connect your Supabase project to enable authentication
         </p>
       </div>

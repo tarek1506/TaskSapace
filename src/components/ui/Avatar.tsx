@@ -31,7 +31,7 @@ export function Avatar({ user, email, name, src, size = 'md', className }: Avata
         src={imageUrl}
         alt={displayName}
         className={cn(
-          'rounded-full ring-2 ring-white flex-shrink-0 object-cover',
+          'rounded-full ring-2 ring-white dark:ring-gray-800 flex-shrink-0 object-cover',
           sizeMap[size],
           className
         )}
@@ -53,7 +53,7 @@ export function Avatar({ user, email, name, src, size = 'md', className }: Avata
   return (
     <div
       className={cn(
-        'rounded-full flex items-center justify-center font-semibold text-white ring-2 ring-white flex-shrink-0',
+        'rounded-full flex items-center justify-center font-semibold text-white ring-2 ring-white dark:ring-gray-800 flex-shrink-0',
         sizeMap[size],
         className
       )}
@@ -84,13 +84,13 @@ export function AvatarGroup({ members, max = 3, size = 'sm', className }: Avatar
           email={m.email}
           name={m.name}
           size={size}
-          className="ring-2 ring-white"
+          className="ring-2 ring-white dark:ring-gray-800"
         />
       ))}
       {extra > 0 && (
         <div
           className={cn(
-            'rounded-full flex items-center justify-center font-semibold text-white ring-2 ring-white bg-gray-400 flex-shrink-0',
+            'rounded-full flex items-center justify-center font-semibold text-white ring-2 ring-white dark:ring-gray-800 bg-gray-400 dark:bg-gray-600 flex-shrink-0',
             sizeMap[size]
           )}
         >

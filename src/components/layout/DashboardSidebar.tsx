@@ -27,7 +27,7 @@ export function DashboardSidebar({ workspaceId, workspaceName, isOwner, onNavCli
   ]
 
   return (
-    <aside className="w-[260px] h-full bg-white flex flex-col shrink-0">
+    <aside className="w-[260px] h-full bg-white dark:bg-gray-900 flex flex-col shrink-0 border-r border-gray-100 dark:border-gray-800">
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-5 py-5">
         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center shadow-sm">
@@ -35,7 +35,7 @@ export function DashboardSidebar({ workspaceId, workspaceName, isOwner, onNavCli
             <path d="M9 6l6 6-6 6M15 6l6 6-6 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
-        <span className="font-bold text-gray-900 text-sm">{workspaceName}</span>
+        <span className="font-bold text-gray-900 dark:text-gray-100 text-sm">{workspaceName}</span>
       </div>
 
       {/* Navigation */}
@@ -48,13 +48,13 @@ export function DashboardSidebar({ workspaceId, workspaceName, isOwner, onNavCli
             className={({ isActive }) => cn(
               'flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
               isActive
-                ? 'bg-[#EDE9FE] text-purple-700'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                ? 'bg-[#EDE9FE] text-purple-700 dark:bg-violet-950 dark:text-violet-300'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100'
             )}
           >
             {({ isActive }) => (
               <>
-                <span className={cn(isActive ? 'text-purple-600' : 'text-gray-400')}>
+                <span className={cn(isActive ? 'text-purple-600 dark:text-violet-400' : 'text-gray-400 dark:text-gray-500')}>
                   {item.icon}
                 </span>
                 <span>{item.label}</span>
@@ -65,20 +65,20 @@ export function DashboardSidebar({ workspaceId, workspaceName, isOwner, onNavCli
       </nav>
 
       {/* Bottom User Section */}
-      <div className="px-3 py-3 border-t border-gray-100">
+      <div className="px-3 py-3 border-t border-gray-100 dark:border-gray-800">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xs font-bold">
             {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900 truncate">{userName}</p>
-            <p className="text-[11px] text-gray-400 truncate">{user?.email}</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{userName}</p>
+            <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate">{user?.email}</p>
           </div>
           <NavLink
             to={`/workspace/${workspaceId}/settings`}
             className={({ isActive }) => cn(
               'p-1.5 rounded-lg transition-colors',
-              isActive ? 'text-purple-600 bg-purple-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+              isActive ? 'text-purple-600 bg-purple-50 dark:text-violet-400 dark:bg-violet-950' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-gray-800'
             )}
           >
             <Settings size={16} />

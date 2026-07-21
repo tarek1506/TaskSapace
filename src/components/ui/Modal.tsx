@@ -46,7 +46,7 @@ export function Modal({ open, onClose, title, description, children, className, 
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/30 backdrop-blur-sm dark:bg-black/60"
         onClick={onClose}
       />
       {/* Modal */}
@@ -54,6 +54,7 @@ export function Modal({ open, onClose, title, description, children, className, 
         ref={ref}
         className={cn(
           'relative w-full bg-white rounded-2xl shadow-2xl shadow-violet-100 fade-in',
+          'dark:bg-gray-800 dark:shadow-violet-900/20 dark:border dark:border-gray-700',
           sizeMap[size],
           className
         )}
@@ -62,15 +63,15 @@ export function Modal({ open, onClose, title, description, children, className, 
       >
         {/* Header */}
         {(title || description) && (
-          <div className="px-6 pt-6 pb-4 border-b border-gray-100">
-            {title && <h2 className="text-lg font-semibold text-gray-900">{title}</h2>}
-            {description && <p className="text-sm text-gray-500 mt-0.5">{description}</p>}
+          <div className="px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-700">
+            {title && <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h2>}
+            {description && <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{description}</p>}
           </div>
         )}
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+          className="absolute right-4 top-4 p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300 transition-colors"
           aria-label="Close"
         >
           <X size={18} />

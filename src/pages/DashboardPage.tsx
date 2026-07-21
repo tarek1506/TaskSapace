@@ -80,11 +80,11 @@ export function DashboardPage() {
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Left Column (~65%) */}
             <div className="flex-[2] space-y-6 min-w-0">
-              <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden">
-                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
                   <div className="flex items-center gap-3">
-                    <h2 className="text-base font-bold text-gray-900">Tasks</h2>
-                    <span className="text-[11px] font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{tasks.length}</span>
+                    <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">Tasks</h2>
+                    <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">{tasks.length}</span>
                   </div>
                   {canCreate && <GradientButton onClick={() => setShowTaskModal(true)} />}
                 </div>

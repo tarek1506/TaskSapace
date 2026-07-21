@@ -87,27 +87,27 @@ export function GanttTimeline() {
   }
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#F7F7F8]">
+    <div className="flex-1 flex flex-col overflow-hidden bg-[#F7F7F8] dark:bg-[#0f1117]">
       {/* Timeline Controls */}
-      <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200">
+      <div className="flex items-center justify-between px-6 py-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-semibold text-gray-900">{monthName}</h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{monthName}</h2>
           <button
             onClick={prevMonth}
-            className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            className="p-1 rounded text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <ChevronLeft size={14} />
           </button>
           <button
             onClick={nextMonth}
-            className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            className="p-1 rounded text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <ChevronRight size={14} />
           </button>
         </div>
         <button
           onClick={goToday}
-          className="px-3 py-1 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+          className="px-3 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
         >
           Today
         </button>
@@ -117,11 +117,11 @@ export function GanttTimeline() {
       <div className="flex-1 overflow-auto scrollbar-thin">
         {/* Day Headers Row */}
         <div
-          className="flex bg-white border-b border-gray-200 sticky top-0 z-20"
+          className="flex bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-20"
           style={{ minWidth: totalWidth }}
         >
           {/* Left label column */}
-          <div className="w-[200px] shrink-0 border-r border-gray-100 bg-white sticky left-0 z-30" />
+          <div className="w-[200px] shrink-0 border-r border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 sticky left-0 z-30" />
 
           {/* Day columns */}
           {Array.from({ length: daysInMonth }).map((_, i) => {
@@ -131,19 +131,19 @@ export function GanttTimeline() {
               <div
                 key={i}
                 className={cn(
-                  'flex flex-col items-center justify-center py-2 cursor-pointer transition-colors border-r border-gray-100',
-                  today ? 'bg-blue-50' : 'hover:bg-gray-50'
+                  'flex flex-col items-center justify-center py-2 cursor-pointer transition-colors border-r border-gray-100 dark:border-gray-700/60',
+                  today ? 'bg-blue-50 dark:bg-blue-950/40' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
                 )}
                 style={{ width: COLUMN_WIDTH, minWidth: COLUMN_WIDTH }}
                 onClick={() => setSelectedDay(day)}
               >
-                <span className="text-[10px] font-medium text-gray-400 leading-tight">
+                <span className="text-[10px] font-medium text-gray-400 dark:text-gray-400 leading-tight">
                   {formatDayName(year, month, day)}
                 </span>
                 <span
                   className={cn(
                     'text-sm font-semibold leading-tight mt-0.5 w-7 h-7 flex items-center justify-center',
-                    today ? 'bg-blue-500 text-white rounded-full' : 'text-gray-700'
+                    today ? 'bg-blue-500 text-white rounded-full' : 'text-gray-700 dark:text-gray-200'
                   )}
                 >
                   {day}
@@ -165,18 +165,18 @@ export function GanttTimeline() {
             <div
               key={idx}
               className={cn(
-                'flex border-b border-gray-100',
-                idx % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFB]'
+                'flex border-b border-gray-100 dark:border-gray-700/60',
+                idx % 2 === 0 ? 'bg-white dark:bg-gray-800/90' : 'bg-[#FAFAFB] dark:bg-gray-800/40'
               )}
               style={{ minHeight: 100 + SWIMLANE_GAP * 2 }}
             >
               {/* Label column */}
               <div
-                className="w-[200px] shrink-0 border-r border-gray-100 p-3 flex flex-col justify-center sticky left-0 z-10"
+                className="w-[200px] shrink-0 border-r border-gray-100 dark:border-gray-700 p-3 flex flex-col justify-center sticky left-0 z-10"
                 style={{ background: 'inherit' }}
               >
-                <span className="text-xs font-semibold text-gray-700">{swimlane.label}</span>
-                <span className="text-[11px] text-gray-400">{swimlane.tasks.length} tasks</span>
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">{swimlane.label}</span>
+                <span className="text-[11px] text-gray-400 dark:text-gray-400">{swimlane.tasks.length} tasks</span>
               </div>
 
               {/* Grid area */}
@@ -185,7 +185,7 @@ export function GanttTimeline() {
                 {Array.from({ length: daysInMonth }).map((_, i) => (
                   <div
                     key={i}
-                    className="absolute top-0 bottom-0 border-r border-gray-100"
+                    className="absolute top-0 bottom-0 border-r border-gray-100 dark:border-gray-700/60"
                     style={{ left: i * COLUMN_WIDTH, width: COLUMN_WIDTH }}
                   />
                 ))}
@@ -198,7 +198,7 @@ export function GanttTimeline() {
                     <div
                       key={task.id}
                       className={cn(
-                        'absolute rounded-lg bg-white border border-gray-200 border-l-[4px] px-2.5 py-2 cursor-pointer hover:shadow-sm hover:border-gray-300 transition-all',
+                        'absolute rounded-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 border-l-[4px] px-2.5 py-2 cursor-pointer hover:shadow-sm hover:border-gray-300 dark:hover:border-gray-500 transition-all',
                         task.accentColor
                       )}
                       style={{
@@ -209,12 +209,12 @@ export function GanttTimeline() {
                       }}
                     >
                       {/* Title */}
-                      <h4 className="text-[13px] font-bold text-gray-900 truncate leading-snug mb-0.5">
+                      <h4 className="text-[13px] font-bold text-gray-900 dark:text-gray-100 truncate leading-snug mb-0.5">
                         {task.title}
                       </h4>
 
                       {/* Description */}
-                      <p className="text-[11px] text-gray-500 truncate leading-normal mb-2">
+                      <p className="text-[11px] text-gray-500 dark:text-gray-300 truncate leading-normal mb-2">
                         {task.description}
                       </p>
 
@@ -226,7 +226,7 @@ export function GanttTimeline() {
                             <div
                               key={i}
                               className={cn(
-                                'w-4 h-4 rounded-full border border-white flex items-center justify-center text-[6px] font-bold text-white',
+                                'w-4 h-4 rounded-full border border-white dark:border-gray-700 flex items-center justify-center text-[6px] font-bold text-white',
                                 a.color
                               )}
                               style={{ marginLeft: i > 0 ? '-5px' : '0', zIndex: 10 - i }}
@@ -236,7 +236,7 @@ export function GanttTimeline() {
                           ))}
                           {task.assignees.length > 3 && (
                             <div
-                              className="w-4 h-4 rounded-full border border-white bg-gray-100 flex items-center justify-center text-[6px] font-medium text-gray-500"
+                              className="w-4 h-4 rounded-full border border-white dark:border-gray-700 bg-gray-100 dark:bg-gray-600 flex items-center justify-center text-[6px] font-medium text-gray-500 dark:text-gray-300"
                               style={{ marginLeft: '-5px' }}
                             >
                               +{task.assignees.length - 3}
@@ -245,7 +245,7 @@ export function GanttTimeline() {
                         </div>
 
                         {/* Comment & attachment counts */}
-                        <div className="flex items-center gap-2 text-gray-400">
+                        <div className="flex items-center gap-2 text-gray-400 dark:text-gray-400">
                           <span className="flex items-center gap-0.5 text-[10px]">
                             <MessageSquare size={9} />
                             {task.comments}

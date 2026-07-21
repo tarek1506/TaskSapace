@@ -8,15 +8,15 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          'bg-violet-600 text-white hover:bg-violet-700 shadow-md shadow-violet-200 hover:shadow-lg hover:shadow-violet-200 active:scale-95',
+          'bg-violet-600 text-white hover:bg-violet-700 shadow-md shadow-violet-200 hover:shadow-lg hover:shadow-violet-200 active:scale-95 dark:shadow-violet-900/30',
         secondary:
-          'bg-white text-violet-700 border border-violet-200 hover:bg-violet-50 hover:border-violet-300',
+          'bg-white text-violet-700 border border-violet-200 hover:bg-violet-50 hover:border-violet-300 dark:bg-gray-800 dark:text-violet-400 dark:border-violet-800 dark:hover:bg-violet-950 dark:hover:border-violet-700',
         ghost:
-          'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
+          'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100',
         danger:
-          'bg-red-500 text-white hover:bg-red-600 shadow-md shadow-red-100',
+          'bg-red-500 text-white hover:bg-red-600 shadow-md shadow-red-100 dark:shadow-red-900/30',
         outline:
-          'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50',
+          'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700',
       },
       size: {
         sm: 'text-xs px-3 py-1.5 rounded-full',

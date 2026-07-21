@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useOutletContext, useNavigate } from 'react-router-dom'
-import { Trash2, AlertTriangle } from 'lucide-react'
+import { Trash2, AlertTriangle, Sun, Moon } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTheme } from '@/contexts/ThemeContext'
 import { TopHeader } from '@/components/layout/Sidebar'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
@@ -20,6 +21,7 @@ export function SettingsPage() {
   const { workspace, isOwner } = useOutletContext<OutletCtx>()
   const { signOut } = useAuth()
   const navigate = useNavigate()
+  const { theme, toggleTheme } = useTheme()
 
   const [name, setName] = useState(workspace.name)
   const [saving, setSaving] = useState(false)
@@ -64,6 +66,28 @@ export function SettingsPage() {
 
       <div className="flex-1 overflow-y-auto scrollbar-thin p-4 sm:p-6">
         <div className="max-w-lg space-y-6">
+          {/* Appearance */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Appearance</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Dark Mode</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Toggle between light and dark theme</p>
+                </div>
+                <button
+                  onClick={toggleTheme}
+                  className="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  id="btn-toggle-theme"
+                >
+                  {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Workspace Name */}
           <Card>
             <CardHeader>
@@ -101,24 +125,24 @@ export function SettingsPage() {
               <CardTitle>Workspace Info</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                <span className="text-sm text-gray-500">Workspace ID</span>
-                <span className="text-sm font-mono text-gray-700 bg-gray-100 px-2 py-0.5 rounded">
+              <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-sm text-gray-500 dark:text-gray-400">Workspace ID</span>
+                <span className="text-sm font-mono text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
                   {workspace.id.slice(0, 8)}…
                 </span>
               </div>
-              <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                <span className="text-sm text-gray-500">Created</span>
-                <span className="text-sm text-gray-700">
+              <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span className="text-sm text-gray-500 dark:text-gray-400">Created</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">
                   {new Date(workspace.created_at).toLocaleDateString('en-US', {
                     year: 'numeric', month: 'long', day: 'numeric'
                   })}
                 </span>
               </div>
               <div className="flex items-center justify-between py-2">
-                <span className="text-sm text-gray-500">Your Role</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">Your Role</span>
                 <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                  isOwner ? 'bg-violet-100 text-violet-700' : 'bg-gray-100 text-gray-600'
+                  isOwner ? 'bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
                 }`}>
                   {isOwner ? 'Owner' : 'Member'}
                 </span>
@@ -128,18 +152,18 @@ export function SettingsPage() {
 
           {/* Danger Zone */}
           {isOwner && (
-            <Card className="border-red-200">
+            <Card className="border-red-200 dark:border-red-900/50">
               <CardHeader>
-                <div className="flex items-center gap-2 text-red-500">
+                <div className="flex items-center gap-2 text-red-500 dark:text-red-400">
                   <AlertTriangle size={16} />
-                  <CardTitle className="text-red-500">Danger Zone</CardTitle>
+                  <CardTitle className="text-red-500 dark:text-red-400">Danger Zone</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-800">Delete Workspace</p>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Delete Workspace</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                       Permanently delete this workspace and all its data.
                     </p>
                   </div>

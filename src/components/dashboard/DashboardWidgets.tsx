@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
-  Search, Plus, Bell, Check,
+  Plus, Bell, Check,
   Calendar, ChevronDown
 } from 'lucide-react'
 import { cn, timeAgo, formatDateTime } from '@/lib/utils'
@@ -31,17 +31,17 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
     const taskTitle = notif.details.task_title || 'a task'
     switch (notif.action_type) {
       case 'task_created':
-        return <span><strong className="text-gray-900">{actor}</strong> created &ldquo;{taskTitle}&rdquo;</span>
+        return <span><strong className="text-gray-900 dark:text-gray-100">{actor}</strong> created &ldquo;{taskTitle}&rdquo;</span>
       case 'task_updated':
         if (notif.details.status_changed) {
           const statusMap: Record<string, string> = { todo: 'To Do', in_progress: 'In Progress', done: 'Done' }
-          return <span><strong className="text-gray-900">{actor}</strong> moved &ldquo;{taskTitle}&rdquo; to <span className="text-violet-600">{statusMap[notif.details.new_status || 'todo']}</span></span>
+          return <span><strong className="text-gray-900 dark:text-gray-100">{actor}</strong> moved &ldquo;{taskTitle}&rdquo; to <span className="text-violet-600 dark:text-violet-400">{statusMap[notif.details.new_status || 'todo']}</span></span>
         }
-        return <span><strong className="text-gray-900">{actor}</strong> updated &ldquo;{taskTitle}&rdquo;</span>
+        return <span><strong className="text-gray-900 dark:text-gray-100">{actor}</strong> updated &ldquo;{taskTitle}&rdquo;</span>
       case 'comment_added':
-        return <span><strong className="text-gray-900">{actor}</strong> commented on &ldquo;{taskTitle}&rdquo;</span>
+        return <span><strong className="text-gray-900 dark:text-gray-100">{actor}</strong> commented on &ldquo;{taskTitle}&rdquo;</span>
       case 'comment_mentioned':
-        return <span><strong className="text-gray-900">{notif.details.actor_name || actor}</strong> mentioned you in &ldquo;{taskTitle}&rdquo;</span>
+        return <span><strong className="text-gray-900 dark:text-gray-100">{notif.details.actor_name || actor}</strong> mentioned you in &ldquo;{taskTitle}&rdquo;</span>
       default:
         return <span>New activity</span>
     }
@@ -49,19 +49,9 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
 
   return (
     <div className="flex items-center justify-between px-4 sm:px-8 py-4 sm:py-5">
-      <h1 className="text-xl sm:text-[28px] font-bold text-gray-900 leading-tight truncate">{title}</h1>
+      <h1 className="text-xl sm:text-[28px] font-bold text-gray-900 dark:text-gray-100 leading-tight truncate">{title}</h1>
 
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Search */}
-        <div className="relative hidden sm:block">
-          <input
-            type="text"
-            placeholder="Search..."
-            className="w-56 pl-4 pr-9 py-2 text-sm rounded-full bg-gray-100 border-0 focus:outline-none focus:ring-2 focus:ring-purple-200 placeholder-gray-400"
-          />
-          <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
-        </div>
-
         {/* Notification Bell */}
         <div className="relative">
           <button
@@ -71,7 +61,7 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
             }}
             className={cn(
               'relative w-10 h-10 rounded-full flex items-center justify-center transition-colors',
-              showNotifDropdown ? 'bg-violet-50 text-violet-600' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              showNotifDropdown ? 'bg-violet-50 text-violet-600 dark:bg-violet-950 dark:text-violet-400' : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
             )}
           >
             <Bell size={16} />
@@ -82,9 +72,9 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
           {showNotifDropdown && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowNotifDropdown(false)} />
-              <div className="absolute right-0 mt-2 w-80 max-h-[400px] overflow-hidden bg-white rounded-xl border border-gray-200 shadow-lg z-50">
-                <div className="px-4 py-3 border-b border-gray-100">
-                  <span className="text-sm font-semibold text-gray-900">Notifications</span>
+              <div className="absolute right-0 mt-2 w-80 max-h-[400px] overflow-hidden bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg z-50">
+                <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Notifications</span>
                 </div>
                 <div className="overflow-y-auto max-h-[340px]">
                   {notifications.length === 0 ? (
@@ -107,10 +97,10 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
                             }}
                             className={cn(
                               'px-4 py-3 text-xs',
-                              taskId ? 'hover:bg-gray-50 cursor-pointer' : '',
+                              taskId ? 'hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer' : '',
                             )}
                           >
-                            <p className="text-gray-600">{getNotificationMessage(notif)}</p>
+                            <p className="text-gray-600 dark:text-gray-300">{getNotificationMessage(notif)}</p>
                             <p className="text-gray-400 mt-1">{formatDateTime(notif.created_at)}</p>
                           </div>
                         )
@@ -127,7 +117,7 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
         <div className="relative">
           <button
             onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-            className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 transition-colors"
+            className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <div className="relative">
               <Avatar
@@ -143,16 +133,16 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
           {showProfileDropdown && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowProfileDropdown(false)} />
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl border border-gray-200 shadow-lg z-50 overflow-hidden">
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg z-50 overflow-hidden">
                 <button
                   onClick={() => { navigate(`/workspace/${workspaceId}/profile`); setShowProfileDropdown(false) }}
-                  className="w-full px-4 py-2.5 text-sm text-left text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="w-full px-4 py-2.5 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   Profile
                 </button>
                 <button
                   onClick={() => { setShowProfileDropdown(false); signOut() }}
-                  className="w-full px-4 py-2.5 text-sm text-left text-red-600 hover:bg-red-50 transition-colors"
+                  className="w-full px-4 py-2.5 text-sm text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors"
                 >
                   Sign out
                 </button>
@@ -179,21 +169,21 @@ export function GradientButton({ onClick }: { onClick?: () => void }) {
 // ─── Task Row ─────────────────────────────────────────────────────────────────
 
 const TAG_STYLES: Record<string, { color: string; bg: string }> = {
-  Design: { color: 'text-pink-600', bg: 'bg-pink-50' },
-  Marketing: { color: 'text-amber-600', bg: 'bg-amber-50' },
-  Engineering: { color: 'text-purple-600', bg: 'bg-purple-50' },
-  Research: { color: 'text-blue-600', bg: 'bg-blue-50' },
-  Planning: { color: 'text-teal-600', bg: 'bg-teal-50' },
-  Frontend: { color: 'text-indigo-600', bg: 'bg-indigo-50' },
-  Backend: { color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  Design: { color: 'text-pink-600 dark:text-pink-400', bg: 'bg-pink-50 dark:bg-pink-950/60' },
+  Marketing: { color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/60' },
+  Engineering: { color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-950/60' },
+  Research: { color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/60' },
+  Planning: { color: 'text-teal-600 dark:text-teal-400', bg: 'bg-teal-50 dark:bg-teal-950/60' },
+  Frontend: { color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-950/60' },
+  Backend: { color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/60' },
 }
 
 const AVATAR_COLORS = ['bg-pink-400', 'bg-purple-400', 'bg-blue-400', 'bg-teal-400', 'bg-emerald-400', 'bg-indigo-400', 'bg-amber-400', 'bg-rose-400']
 
 const PRIORITY_BADGE: Record<TaskPriority, { label: string; icon: string; color: string; bg: string } | null> = {
-  high: { label: 'High', icon: '↑', color: 'text-pink-600', bg: 'bg-pink-50' },
-  medium: { label: 'Medium', icon: '→', color: 'text-amber-600', bg: 'bg-amber-50' },
-  low: { label: 'Low', icon: '↓', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  high: { label: 'High', icon: '↑', color: 'text-pink-600 dark:text-pink-400', bg: 'bg-pink-50 dark:bg-pink-950/60' },
+  medium: { label: 'Medium', icon: '→', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/60' },
+  low: { label: 'Low', icon: '↓', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/60' },
   none: null,
 }
 
@@ -211,7 +201,7 @@ export function TaskList({ tasks, members, onToggle }: { tasks: Task[]; members:
         const tag = task.project_label || 'General'
         const tagStyle = task.project_color
           ? null
-          : TAG_STYLES[tag] || { color: 'text-gray-600', bg: 'bg-gray-50' }
+          : TAG_STYLES[tag] || { color: 'text-gray-600 dark:text-gray-300', bg: 'bg-gray-50 dark:bg-gray-700/60' }
         const assignees = (task.assigned_to || []).map((uid, i) => {
           const m = profileMap.get(uid)
           const name = m?.user_name || m?.user_email || 'U'
@@ -222,9 +212,9 @@ export function TaskList({ tasks, members, onToggle }: { tasks: Task[]; members:
           <div
             key={task.id}
             className={cn(
-              'flex items-center gap-3 px-4 py-3 border-b border-gray-100 transition-all',
-              idx === 0 && 'bg-white shadow-[0_2px_12px_rgba(0,0,0,0.06)] rounded-xl border border-gray-200 -mx-1',
-              idx !== 0 && 'hover:bg-gray-50'
+              'flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-700/50 transition-all',
+              idx === 0 && 'bg-white dark:bg-gray-800 shadow-[0_2px_12px_rgba(0,0,0,0.06)] rounded-xl border border-gray-200 dark:border-gray-700 -mx-1',
+              idx !== 0 && 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
             )}
           >
             <button
@@ -233,7 +223,7 @@ export function TaskList({ tasks, members, onToggle }: { tasks: Task[]; members:
                 'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
                 done
                   ? 'bg-purple-500 border-purple-500'
-                  : 'border-gray-300 hover:border-purple-400'
+                  : 'border-gray-300 dark:border-gray-600 hover:border-purple-400'
               )}
             >
               {done && <Check size={10} className="text-white" />}
@@ -241,7 +231,7 @@ export function TaskList({ tasks, members, onToggle }: { tasks: Task[]; members:
 
             <span className={cn(
               'flex-1 text-sm font-medium',
-              done ? 'text-gray-400 line-through' : 'text-gray-800'
+              done ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-800 dark:text-gray-100'
             )}>
               {task.title}
             </span>
@@ -256,14 +246,14 @@ export function TaskList({ tasks, members, onToggle }: { tasks: Task[]; members:
               {assignees.slice(0, 2).map((a, i) => (
                 <div
                   key={i}
-                  className={cn('w-5 h-5 rounded-full border border-white flex items-center justify-center text-[7px] font-bold text-white', a.color)}
+                  className={cn('w-5 h-5 rounded-full border border-white dark:border-gray-800 flex items-center justify-center text-[7px] font-bold text-white', a.color)}
                   style={{ marginLeft: i > 0 ? '-4px' : '0', zIndex: 10 - i }}
                 >
                   {a.initials}
                 </div>
               ))}
               {assignees.length > 2 && (
-                <div className="w-5 h-5 rounded-full border border-white bg-gray-100 flex items-center justify-center text-[7px] font-medium text-gray-500" style={{ marginLeft: '-4px' }}>
+                <div className="w-5 h-5 rounded-full border border-white dark:border-gray-800 bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-[7px] font-medium text-gray-500 dark:text-gray-300" style={{ marginLeft: '-4px' }}>
                   +{assignees.length - 2}
                 </div>
               )}
@@ -288,7 +278,7 @@ export function TaskList({ tasks, members, onToggle }: { tasks: Task[]; members:
       })}
 
       {tasks.length === 0 && (
-        <div className="py-10 text-center text-sm text-gray-400">No tasks yet</div>
+        <div className="py-10 text-center text-sm text-gray-400 dark:text-gray-500">No tasks yet</div>
       )}
     </div>
   )
@@ -307,31 +297,31 @@ interface ProjectCard {
 }
 
 const PROJECT_CARDS: ProjectCard[] = [
-  { id: 'p1', title: 'Mobile App', iconBg: 'bg-teal-100', icon: '📱', assignees: [{ initials: 'AL', color: 'bg-pink-400' }, { initials: 'SK', color: 'bg-purple-400' }], progress: 72, progressColor: 'bg-teal-500' },
-  { id: 'p2', title: 'Backend API', iconBg: 'bg-red-100', icon: '🔧', assignees: [{ initials: 'JP', color: 'bg-blue-400' }, { initials: 'ML', color: 'bg-indigo-400' }], progress: 45, progressColor: 'bg-red-500' },
-  { id: 'p3', title: 'Design System', iconBg: 'bg-purple-100', icon: '🎨', assignees: [{ initials: 'AL', color: 'bg-pink-400' }, { initials: 'EW', color: 'bg-emerald-400' }], progress: 88, progressColor: 'bg-purple-500' },
-  { id: 'p4', title: 'Marketing Site', iconBg: 'bg-blue-100', icon: '🚀', assignees: [{ initials: 'LW', color: 'bg-teal-400' }], progress: 33, progressColor: 'bg-blue-500' },
+  { id: 'p1', title: 'Mobile App', iconBg: 'bg-teal-100 dark:bg-teal-950/60', icon: '📱', assignees: [{ initials: 'AL', color: 'bg-pink-400' }, { initials: 'SK', color: 'bg-purple-400' }], progress: 72, progressColor: 'bg-teal-500' },
+  { id: 'p2', title: 'Backend API', iconBg: 'bg-red-100 dark:bg-red-950/60', icon: '🔧', assignees: [{ initials: 'JP', color: 'bg-blue-400' }, { initials: 'ML', color: 'bg-indigo-400' }], progress: 45, progressColor: 'bg-red-500' },
+  { id: 'p3', title: 'Design System', iconBg: 'bg-purple-100 dark:bg-purple-950/60', icon: '🎨', assignees: [{ initials: 'AL', color: 'bg-pink-400' }, { initials: 'EW', color: 'bg-emerald-400' }], progress: 88, progressColor: 'bg-purple-500' },
+  { id: 'p4', title: 'Marketing Site', iconBg: 'bg-blue-100 dark:bg-blue-950/60', icon: '🚀', assignees: [{ initials: 'LW', color: 'bg-teal-400' }], progress: 33, progressColor: 'bg-blue-500' },
 ]
 
 export function ProjectCards() {
   return (
     <div className="grid grid-cols-2 gap-4">
       {PROJECT_CARDS.map(card => (
-        <div key={card.id} className="bg-white rounded-2xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] transition-shadow cursor-pointer">
+        <div key={card.id} className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)] dark:shadow-gray-900/50 hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] transition-shadow cursor-pointer border border-transparent dark:border-gray-700/60">
           <div className="flex items-start justify-between mb-4">
             <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center text-lg', card.iconBg)}>
               {card.icon}
             </div>
           </div>
-          <h3 className="text-sm font-bold text-gray-900 mb-3">{card.title}</h3>
+          <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-3">{card.title}</h3>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[11px] text-gray-400 mb-1">Assignee</p>
+              <p className="text-[11px] text-gray-400 dark:text-gray-400 mb-1">Assignee</p>
               <div className="flex items-center">
                 {card.assignees.slice(0, 3).map((a, i) => (
                   <div
                     key={i}
-                    className={cn('w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-[8px] font-bold text-white', a.color)}
+                    className={cn('w-6 h-6 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center text-[8px] font-bold text-white', a.color)}
                     style={{ marginLeft: i > 0 ? '-6px' : '0', zIndex: 10 - i }}
                   >
                     {a.initials}
@@ -340,9 +330,9 @@ export function ProjectCards() {
               </div>
             </div>
             <div className="text-right">
-              <p className="text-[11px] text-gray-400 mb-1">Progress</p>
-              <p className="text-xs font-bold text-gray-700">{card.progress}%</p>
-              <div className="w-16 h-1.5 bg-gray-100 rounded-full mt-1 overflow-hidden">
+              <p className="text-[11px] text-gray-400 dark:text-gray-400 mb-1">Progress</p>
+              <p className="text-xs font-bold text-gray-700 dark:text-gray-200">{card.progress}%</p>
+              <div className="w-16 h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full mt-1 overflow-hidden">
                 <div className={cn('h-full rounded-full', card.progressColor)} style={{ width: `${card.progress}%` }} />
               </div>
             </div>
@@ -377,12 +367,12 @@ export function GanttMini({ tasks, members }: GanttMiniProps) {
 
   if (timelineTasks.length === 0) {
     return (
-      <div className="bg-white rounded-2xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)] dark:shadow-gray-900/50">
         <div className="flex items-center gap-2 mb-4">
-          <Calendar size={16} className="text-gray-400" />
-          <span className="text-sm font-bold text-gray-900">Timeline</span>
+          <Calendar size={16} className="text-gray-400 dark:text-gray-500" />
+          <span className="text-sm font-bold text-gray-900 dark:text-gray-100">Timeline</span>
         </div>
-        <p className="text-xs text-gray-400 text-center py-8">No tasks with both due date and deadline set</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-8">No tasks with both due date and deadline set</p>
       </div>
     )
   }
@@ -435,13 +425,13 @@ export function GanttMini({ tasks, members }: GanttMiniProps) {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)] dark:shadow-gray-900/50">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Calendar size={16} className="text-gray-400" />
-          <span className="text-sm font-bold text-gray-900">Timeline</span>
+          <Calendar size={16} className="text-gray-400 dark:text-gray-500" />
+          <span className="text-sm font-bold text-gray-900 dark:text-gray-100">Timeline</span>
         </div>
-        <span className="text-[11px] text-gray-400">{days.length} days</span>
+        <span className="text-[11px] text-gray-400 dark:text-gray-500">{days.length} days</span>
       </div>
 
       {/* Date Headers */}
@@ -488,7 +478,7 @@ export function GanttMini({ tasks, members }: GanttMiniProps) {
                   ) : (
                     <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-[7px] font-bold text-gray-500">?</div>
                   )}
-                  <span className="text-[11px] text-gray-500 truncate">{task.title}</span>
+                  <span className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{task.title}</span>
                 </div>
               </div>
               <div className="flex-1 relative h-7">
@@ -499,7 +489,7 @@ export function GanttMini({ tasks, members }: GanttMiniProps) {
                   className={cn(
                     'absolute top-1 h-5 rounded-full border-l-[3px] flex items-center px-2 shadow-sm',
                     color,
-                    isFeatured ? 'bg-gradient-to-r from-purple-400 to-pink-400 text-white' : 'bg-white border border-gray-200 text-gray-600'
+                    isFeatured ? 'bg-gradient-to-r from-purple-400 to-pink-400 text-white' : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300'
                   )}
                   style={{
                     left: `${left}%`,
@@ -562,14 +552,14 @@ export function TimeWidget({ tasks }: TimeWidgetProps) {
   const diff = totalThisWeek - totalPrevWeek
 
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)] dark:shadow-gray-900/50">
       <div className="flex items-center justify-between mb-4">
-        <span className="text-sm font-bold text-gray-900">Time Tracking</span>
-        <span className="text-[11px] text-gray-400">This week</span>
+        <span className="text-sm font-bold text-gray-900 dark:text-gray-100">Time Tracking</span>
+        <span className="text-[11px] text-gray-400 dark:text-gray-500">This week</span>
       </div>
 
       <div className="flex items-end gap-2 mb-4">
-        <span className="text-3xl font-extrabold text-gray-900 tracking-tight">{totalThisWeek} tasks</span>
+        <span className="text-3xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight">{totalThisWeek} tasks</span>
         {diff !== 0 && (
           <span className={cn('text-xs font-semibold px-1.5 py-0.5 rounded-full mb-1', diff > 0 ? 'text-emerald-500 bg-emerald-50' : 'text-red-500 bg-red-50')}>
             {diff > 0 ? '+' : ''}{diff}
@@ -580,15 +570,15 @@ export function TimeWidget({ tasks }: TimeWidgetProps) {
       <div className="flex gap-3 mb-4">
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-emerald-400" />
-          <span className="text-[11px] text-gray-500">Done <span className="font-semibold text-gray-700">{done}</span></span>
+          <span className="text-[11px] text-gray-500 dark:text-gray-400">Done <span className="font-semibold text-gray-700 dark:text-gray-200">{done}</span></span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-amber-400" />
-          <span className="text-[11px] text-gray-500">Active <span className="font-semibold text-gray-700">{inProgress}</span></span>
+          <span className="text-[11px] text-gray-500 dark:text-gray-400">Active <span className="font-semibold text-gray-700 dark:text-gray-200">{inProgress}</span></span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-gray-300" />
-          <span className="text-[11px] text-gray-500">To Do <span className="font-semibold text-gray-700">{todo}</span></span>
+          <span className="text-[11px] text-gray-500 dark:text-gray-400">To Do <span className="font-semibold text-gray-700 dark:text-gray-200">{todo}</span></span>
         </div>
       </div>
 

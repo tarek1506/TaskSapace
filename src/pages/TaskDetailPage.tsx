@@ -90,9 +90,9 @@ export function TaskDetailPage() {
   }
 
   const priorityConfig: Record<TaskPriority, { label: string; icon: React.ReactNode; color: string; bg: string } | null> = {
-    high: { label: 'High', icon: <ArrowUp size={12} />, color: 'text-pink-600', bg: 'bg-pink-50' },
-    medium: { label: 'Medium', icon: <ArrowRight size={12} />, color: 'text-amber-600', bg: 'bg-amber-50' },
-    low: { label: 'Low', icon: <ArrowDown size={12} />, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    high: { label: 'High', icon: <ArrowUp size={12} />, color: 'text-pink-600', bg: 'bg-pink-50 dark:bg-pink-950/50' },
+    medium: { label: 'Medium', icon: <ArrowRight size={12} />, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-950/50' },
+    low: { label: 'Low', icon: <ArrowDown size={12} />, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/50' },
     none: null,
   }
 
@@ -115,7 +115,7 @@ export function TaskDetailPage() {
       <div className="flex flex-col h-full">
         <TopHeader title="Task Not Found" />
         <div className="flex flex-col items-center justify-center flex-1 gap-4">
-          <p className="text-gray-500">This task doesn't exist or you don't have access.</p>
+          <p className="text-gray-500 dark:text-gray-400">This task doesn't exist or you don't have access.</p>
           <Button variant="secondary" onClick={() => navigate(`/workspace/${workspaceId}/tasks`)}>
             <ArrowLeft size={14} /> Back to Tasks
           </Button>
@@ -170,15 +170,15 @@ export function TaskDetailPage() {
             <CardContent className="space-y-6">
               {/* Title + Status */}
               <div className="flex items-start justify-between gap-4">
-                <h2 className="text-xl font-bold text-gray-900 leading-snug">{task.title}</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 leading-snug">{task.title}</h2>
                 <StatusBadge status={task.status} />
               </div>
 
               {/* Description */}
               {task.description && (
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Description</p>
-                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Description</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
                     {task.description}
                   </p>
                 </div>
@@ -188,7 +188,7 @@ export function TaskDetailPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {/* Status quick-change */}
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Status</p>
+                  <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Status</p>
                   <div className="flex flex-col gap-1.5">
                     {(['todo', 'in_progress', 'done'] as const).map((s) => (
                       <button
@@ -196,8 +196,8 @@ export function TaskDetailPage() {
                         onClick={() => canEdit && handleStatusChange(s)}
                         className={`flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-lg transition-colors text-left ${
                           task.status === s
-                            ? 'bg-violet-50 text-violet-700 font-medium'
-                            : 'text-gray-500 hover:bg-gray-50'
+                            ? 'bg-violet-50 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300 font-medium'
+                            : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
                         }`}
                         disabled={!canEdit}
                         id={`status-btn-${s}`}
@@ -213,26 +213,26 @@ export function TaskDetailPage() {
 
                 {/* Due Date */}
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                  <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
                     <span className="flex items-center gap-1.5">
                       <Calendar size={11} /> Due Date
                     </span>
                   </p>
-                  <p className="text-sm font-medium text-gray-800">
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
                     {task.due_date ? formatDateTime(task.due_date) : '—'}
                   </p>
                 </div>
 
                 {/* Deadline */}
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                  <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
                     <span className="flex items-center gap-1.5">
                       <Clock size={11} /> Deadline
                     </span>
                   </p>
                   <p className={cn(
                     'text-sm font-medium',
-                    task.deadline ? (new Date(task.deadline) < new Date() && task.status !== 'done' ? 'text-red-600' : 'text-gray-800') : 'text-gray-400'
+                    task.deadline ? (new Date(task.deadline) < new Date() && task.status !== 'done' ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-gray-200') : 'text-gray-400 dark:text-gray-500'
                   )}>
                     {task.deadline ? formatDateTime(task.deadline) : '—'}
                   </p>
@@ -240,20 +240,20 @@ export function TaskDetailPage() {
 
                 {/* Priority */}
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Priority</p>
+                  <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Priority</p>
                   {priorityConfig[task.priority] ? (
                     <span className={cn('inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full', priorityConfig[task.priority]!.bg, priorityConfig[task.priority]!.color)}>
                       {priorityConfig[task.priority]!.icon} {priorityConfig[task.priority]!.label}
                     </span>
                   ) : (
-                    <p className="text-sm text-gray-400">—</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500">—</p>
                   )}
                 </div>
 
                 {/* Project */}
                 {task.project_label && task.project_color && (
                   <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                    <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
                       <span className="flex items-center gap-1.5">
                         <Tag size={11} /> Project
                       </span>
@@ -270,7 +270,7 @@ export function TaskDetailPage() {
               {/* Assignees */}
               {task.assigned_to && task.assigned_to.length > 0 && (
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                  <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
                     <span className="flex items-center gap-1.5">
                       <Users size={11} /> Assignees
                     </span>
@@ -280,14 +280,14 @@ export function TaskDetailPage() {
                       const m = members.find((m) => m.user_id === uid)
                       if (!m) return null
                       return (
-                        <div key={uid} className="flex items-center gap-2 bg-gray-50 rounded-full px-3 py-1.5">
+                        <div key={uid} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 rounded-full px-3 py-1.5">
                           <div
                             className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
                             style={{ backgroundColor: '#8B5CF6' }}
                           >
                             {(m.user_name || m.user_email || '?')[0].toUpperCase()}
                           </div>
-                          <span className="text-xs font-medium text-gray-700">
+                          <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                             {m.user_name || m.user_email?.split('@')[0]}
                           </span>
                         </div>

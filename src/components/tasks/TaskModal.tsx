@@ -194,7 +194,7 @@ export function TaskModal({
 
           {/* Due Date */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700">Due Date</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Due Date</label>
             <div className="relative">
               <DatePicker
                 value={dueDate}
@@ -209,7 +209,7 @@ export function TaskModal({
 
           {/* Deadline */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700">Deadline</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Deadline</label>
             <div className="relative">
               <DatePicker
                 value={deadline}
@@ -225,7 +225,7 @@ export function TaskModal({
 
         {/* Project Label */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
             <Tag size={13} /> Project / Label
           </label>
           <div className="flex gap-2">
@@ -234,7 +234,7 @@ export function TaskModal({
               onChange={(e) => setProjectLabel(e.target.value)}
               placeholder="e.g. Design, Backend…"
               disabled={!canEdit}
-              className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 focus:bg-white transition-all"
+              className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:bg-white dark:focus:bg-gray-700 transition-all"
               id="task-project-label"
             />
             {/* Color picker */}
@@ -243,7 +243,7 @@ export function TaskModal({
                 <button
                   key={name}
                   className={`w-5 h-5 rounded-full transition-transform ${
-                    projectColor === hex ? 'ring-2 ring-offset-1 ring-gray-400 scale-110' : 'hover:scale-110'
+                    projectColor === hex ? 'ring-2 ring-offset-1 ring-gray-400 dark:ring-gray-300 dark:ring-offset-gray-800 scale-110' : 'hover:scale-110'
                   }`}
                   style={{ backgroundColor: hex }}
                   onClick={() => setProjectColor(hex)}
@@ -258,7 +258,7 @@ export function TaskModal({
 
         {/* Assignees */}
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
             <Users size={13} /> Assignees
           </label>
           <div className="flex flex-wrap gap-2">
@@ -270,8 +270,8 @@ export function TaskModal({
                   onClick={() => canEdit && toggleAssignee(m.user_id)}
                   className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
                     selected
-                      ? 'bg-violet-100 text-violet-700 ring-1 ring-violet-300'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'bg-violet-100 text-violet-700 ring-1 ring-violet-300 dark:bg-violet-950 dark:text-violet-300 dark:ring-violet-700'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                   }`}
                   id={`assignee-${m.user_id}`}
                   disabled={!canEdit}
