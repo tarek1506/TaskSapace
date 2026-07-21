@@ -272,7 +272,8 @@ export function CommentThread({ taskId, workspaceId, taskTitle, members, ownerId
       }
     }
 
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
       submitComment()
     }
     if (e.key === 'Escape' && replyingTo) {
@@ -421,7 +422,7 @@ export function CommentThread({ taskId, workspaceId, taskTitle, members, ownerId
               value={newComment}
               onChange={handleTextChange}
               onKeyDown={handleKeyDown}
-              placeholder={replyingTo ? `Reply to ${replyingTo.name}…` : 'Write a comment… (Ctrl+Enter to submit)'}
+              placeholder={replyingTo ? `Reply to ${replyingTo.name}…` : 'Write a comment… (Press Enter to submit, Shift+Enter for new line)'}
               rows={2}
               className="w-full resize-none rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400 focus:bg-white dark:focus:bg-gray-700 transition-all"
               id={`comment-input-${taskId}`}
