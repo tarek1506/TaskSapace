@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router-dom'
 import {
   Home, CheckSquare, Calendar, Users,
-  Settings
+  Settings, MessageCircle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
+import { useChatUnread } from '@/contexts/ChatContext'
 
 interface DashboardSidebarProps {
   workspaceId: string
@@ -15,6 +16,7 @@ interface DashboardSidebarProps {
 
 export function DashboardSidebar({ workspaceId, workspaceName, isOwner, onNavClick }: DashboardSidebarProps) {
   const { user, profile } = useAuth()
+  const { totalUnread } = useChatUnread()
 
   const userName = profile?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'
   const initials = userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
@@ -23,6 +25,7 @@ export function DashboardSidebar({ workspaceId, workspaceName, isOwner, onNavCli
     { icon: <Home size={18} />, label: 'Home', to: `/workspace/${workspaceId}/dashboard`, id: 'nav-home' },
     { icon: <CheckSquare size={18} />, label: 'Tasks', to: `/workspace/${workspaceId}/tasks`, id: 'nav-tasks' },
     { icon: <Calendar size={18} />, label: 'Calendar', to: `/workspace/${workspaceId}/calendar`, id: 'nav-calendar' },
+    { icon: <MessageCircle size={18} />, label: 'Messages', to: `/workspace/${workspaceId}/chat`, id: 'nav-chat', badge: totalUnread },
     ...(isOwner ? [{ icon: <Users size={18} />, label: 'Members', to: `/workspace/${workspaceId}/members`, id: 'nav-members' }] : []),
   ]
 
@@ -57,7 +60,12 @@ export function DashboardSidebar({ workspaceId, workspaceName, isOwner, onNavCli
                 <span className={cn(isActive ? 'text-purple-600 dark:text-violet-400' : 'text-gray-400 dark:text-gray-500')}>
                   {item.icon}
                 </span>
-                <span>{item.label}</span>
+                <span className="flex-1">{item.label}</span>
+                {'badge' in item && item.badge! > 0 && (
+                  <span className="min-w-[18px] h-[18px] flex items-center justify-center bg-violet-500 text-white text-[10px] font-bold rounded-full px-1">
+                    {item.badge! > 9 ? '9+' : item.badge}
+                  </span>
+                )}
               </>
             )}
           </NavLink>

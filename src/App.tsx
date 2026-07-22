@@ -14,6 +14,7 @@ import { SettingsPage } from '@/pages/SettingsPage'
 import { ProfilePage } from '@/pages/ProfilePage'
 import { CalendarPage } from '@/pages/CalendarPage'
 import { TimelinePage } from '@/pages/TimelinePage'
+import { ChatPage } from '@/pages/ChatPage'
 
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
             <Route path="tasks/:taskId" element={<TaskDetailPage />} />
             <Route path="calendar" element={<CalendarPage />} />
             <Route path="timeline" element={<TimelinePage />} />
+            <Route path="chat" element={<ChatPage />} />
             <Route path="members" element={<MembersPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="profile" element={<ProfilePage />} />

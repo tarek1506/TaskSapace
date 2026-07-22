@@ -5,6 +5,7 @@ import { DashboardSidebar } from './DashboardSidebar'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { NotificationProvider } from '@/contexts/NotificationContext'
+import { ChatProvider } from '@/contexts/ChatContext'
 import type { Workspace, WorkspaceMember } from '@/types'
 
 export function WorkspaceLayout() {
@@ -61,6 +62,7 @@ export function WorkspaceLayout() {
 
   return (
     <div className="min-h-screen bg-[#F3F4F6] dark:bg-[#0f1117] flex items-center justify-center p-2 sm:p-4">
+      <ChatProvider workspaceId={workspace.id}>
       <div className="w-full max-w-[1440px] h-[calc(100vh-1rem)] sm:h-[calc(100vh-2rem)] bg-white dark:bg-gray-900 rounded-[24px] shadow-[0_8px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.4)] flex overflow-hidden relative">
         {/* Mobile hamburger */}
         <button
@@ -98,6 +100,7 @@ export function WorkspaceLayout() {
           </NotificationProvider>
         </main>
       </div>
+      </ChatProvider>
     </div>
   )
 }

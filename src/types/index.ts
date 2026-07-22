@@ -149,3 +149,41 @@ export interface AppNotification {
   user_name?: string
   user_email?: string
 }
+
+// ─── Direct Messages / Chat ───────────────────────────────────────────────────
+
+export interface DirectMessageThread {
+  id: string
+  workspace_id: string
+  participant_a: string
+  participant_b: string
+  created_at: string
+  last_message_at: string | null
+  // Enriched client-side
+  other_user_id?: string
+  other_user_name?: string
+  other_user_email?: string
+  other_user_avatar_url?: string | null
+  last_message_preview?: string
+  unread_count?: number
+  is_online?: boolean
+}
+
+export interface DirectMessage {
+  id: string
+  thread_id: string
+  sender_id: string
+  content: string
+  created_at: string
+  // Enriched client-side
+  sender_name?: string
+  sender_email?: string
+  sender_avatar_url?: string | null
+}
+
+export interface DirectMessageRead {
+  id: string
+  thread_id: string
+  user_id: string
+  read_at: string
+}
