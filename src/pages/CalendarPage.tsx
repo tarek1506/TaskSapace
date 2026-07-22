@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useOutletContext, useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, parseIsoDate } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Workspace, WorkspaceMember, Task } from '@/types'
@@ -72,7 +72,8 @@ export function CalendarPage() {
     const map: Record<number, Task[]> = {}
     for (const task of tasks) {
       if (!task.due_date) continue
-      const d = new Date(task.due_date)
+      const d = parseIsoDate(task.due_date)
+      if (!d) continue
       if (d.getFullYear() === year && d.getMonth() === month) {
         const day = d.getDate()
         if (!map[day]) map[day] = []

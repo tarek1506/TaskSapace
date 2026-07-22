@@ -11,7 +11,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/Select'
 import { TaskModal } from '@/components/tasks/TaskModal'
 import { ConfirmModal } from '@/components/ui/Modal'
-import { cn } from '@/lib/utils'
+import { cn, formatDate } from '@/lib/utils'
 import type { Workspace, WorkspaceMember, Task, TaskStatus, TaskPriority } from '@/types'
 
 interface OutletCtx {
@@ -415,7 +415,7 @@ export function TasksPage() {
                               {task.due_date && (
                                 <span className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-gray-500">
                                   <Calendar size={10} />
-                                  {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                  {formatDate(task.due_date)}
                                 </span>
                               )}
                             </div>
@@ -533,7 +533,7 @@ export function TasksPage() {
                       <td className="px-5 py-3.5">
                         {task.due_date && (
                           <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            {formatDate(task.due_date)}
                           </span>
                         )}
                       </td>
@@ -596,7 +596,7 @@ export function TasksPage() {
                   </div>
                   {task.due_date && (
                     <span className="text-xs text-gray-400 dark:text-gray-500 w-16 text-right shrink-0">
-                      {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {formatDate(task.due_date)}
                     </span>
                   )}
                 </div>

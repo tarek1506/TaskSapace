@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/Button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/Popover"
 
+import { parseIsoDate } from "@/lib/utils"
+
 interface DatePickerProps {
   value?: string
   onChange: (date: string) => void
@@ -29,7 +31,10 @@ export function DatePicker({
   const [date, setDate] = React.useState<Date | undefined>(undefined)
   const [timeStr, setTimeStr] = React.useState("09:00")
   const [open, setOpen] = React.useState(false)
-  const [viewDate, setViewDate] = React.useState(() => value ? new Date(value) : new Date())
+  const [viewDate, setViewDate] = React.useState(() => {
+    const parsed = parseIsoDate(value)
+    return parsed || new Date()
+  })
 
   // 12-hour helpers
   const to12 = (h24: number) => {
@@ -47,11 +52,13 @@ export function DatePicker({
 
   React.useEffect(() => {
     if (value) {
-      const d = new Date(value)
-      setDate(d)
-      setViewDate(d)
-      if (showTime) {
-        setTimeStr(format(d, "HH:mm"))
+      const d = parseIsoDate(value)
+      if (d) {
+        setDate(d)
+        setViewDate(d)
+        if (showTime) {
+          setTimeStr(format(d, "HH:mm"))
+        }
       }
     } else {
       setDate(undefined)
@@ -60,12 +67,16 @@ export function DatePicker({
   }, [value, showTime])
 
   const emitChange = (selectedDate: Date, time: string) => {
+    const y = selectedDate.getFullYear()
+    const mo = selectedDate.getMonth()
+    const da = selectedDate.getDate()
     if (showTime) {
-      const [h, m] = time.split(':').map(Number)
-      selectedDate.setHours(h, m, 0, 0)
-      onChange(format(selectedDate, "yyyy-MM-dd'T'HH:mm"))
+      const [h, m] = (time || '09:00').split(':').map(Number)
+      const d = new Date(y, mo, da, h || 0, m || 0, 0)
+      onChange(format(d, "yyyy-MM-dd'T'HH:mm"))
     } else {
-      onChange(format(selectedDate, "yyyy-MM-dd"))
+      const d = new Date(y, mo, da, 12, 0, 0)
+      onChange(format(d, "yyyy-MM-dd"))
     }
   }
 
@@ -87,10 +98,8 @@ export function DatePicker({
 
   const handleSelect = (selectedDate: Date) => {
     setDate(selectedDate)
-    if (showTime) {
-      emitChange(selectedDate, timeStr)
-    } else {
-      onChange(format(selectedDate, "yyyy-MM-dd"))
+    emitChange(selectedDate, timeStr)
+    if (!showTime) {
       setOpen(false)
     }
   }

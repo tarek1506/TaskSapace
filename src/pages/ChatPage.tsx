@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useOutletContext } from 'react-router-dom'
-import { MessageCircle, Send, Search, ArrowLeft } from 'lucide-react'
+import {
+  MessageCircle, Send, Search, ArrowLeft, Paperclip, X,
+  File, FileText, Image as ImageIcon, Download, ExternalLink,
+  Film, Music, FileArchive, Loader2
+} from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useChatUnread } from '@/contexts/ChatContext'
@@ -35,6 +39,76 @@ function formatTime(iso: string) {
 function isOnline(lastSeenAt: string | null | undefined) {
   if (!lastSeenAt) return false
   return Date.now() - new Date(lastSeenAt).getTime() < 2 * 60 * 1000
+}
+
+function formatFileSize(bytes?: number | null) {
+  if (!bytes) return ''
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function isImageFile(mimeOrExt?: string | null) {
+  if (!mimeOrExt) return false
+  const lower = mimeOrExt.toLowerCase()
+  return (
+    lower.startsWith('image/') ||
+    /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(lower)
+  )
+}
+
+function getFileIcon(mimeOrName?: string | null) {
+  if (!mimeOrName) return <File size={18} />
+  const lower = mimeOrName.toLowerCase()
+  if (lower.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(lower)) {
+    return <ImageIcon size={18} className="text-violet-500" />
+  }
+  if (lower.includes('pdf') || lower.includes('document') || /\.(pdf|doc|docx|txt|rtf)$/i.test(lower)) {
+    return <FileText size={18} className="text-blue-500" />
+  }
+  if (lower.includes('video') || /\.(mp4|webm|mov|avi)$/i.test(lower)) {
+    return <Film size={18} className="text-rose-500" />
+  }
+  if (lower.includes('audio') || /\.(mp3|wav|ogg|m4a)$/i.test(lower)) {
+    return <Music size={18} className="text-amber-500" />
+  }
+  if (lower.includes('zip') || lower.includes('compressed') || /\.(zip|rar|7z|tar|gz)$/i.test(lower)) {
+    return <FileArchive size={18} className="text-amber-600" />
+  }
+  return <File size={18} className="text-gray-500" />
+}
+
+async function uploadChatAttachment(file: File, workspaceId: string, threadId: string): Promise<string> {
+  const ext = file.name.split('.').pop() || 'bin'
+  const path = `${workspaceId}/${threadId}/${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`
+
+  const { error } = await supabase.storage
+    .from('chat-attachments')
+    .upload(path, file, { cacheControl: '3600', upsert: false })
+
+  if (error) {
+    const fallbackRes = await supabase.storage
+      .from('avatars')
+      .upload(`chat/${path}`, file, { cacheControl: '3600', upsert: false })
+
+    if (fallbackRes.error) {
+      if (file.size <= 3 * 1024 * 1024) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = reject
+          reader.readAsDataURL(file)
+        })
+      }
+      throw error
+    }
+
+    const { data: pubUrlData } = supabase.storage.from('avatars').getPublicUrl(`chat/${path}`)
+    return pubUrlData.publicUrl
+  }
+
+  const { data: pubUrlData } = supabase.storage.from('chat-attachments').getPublicUrl(path)
+  return pubUrlData.publicUrl
 }
 
 // Ensures participant_a is always the lexicographically smaller UUID
@@ -341,22 +415,53 @@ export function ChatPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   // ── Send message ─────────────────────────────────────────────────────────────
   const sendMessage = useCallback(async () => {
-    if (!input.trim() || !activeThread || !user || sending) return
+    if ((!input.trim() && !selectedFile) || !activeThread || !user || sending) return
     const content = input.trim()
+    const fileToUpload = selectedFile
     setSending(true)
     setInput('')
+    setSelectedFile(null)
 
     const myName = profile?.full_name || user.email?.split('@')[0] || 'Me'
+
+    let fileUrl: string | null = null
+    let fileName: string | null = null
+    let fileType: string | null = null
+    let fileSize: number | null = null
+
+    if (fileToUpload) {
+      fileName = fileToUpload.name
+      fileType = fileToUpload.type || fileToUpload.name.split('.').pop() || null
+      fileSize = fileToUpload.size
+      try {
+        fileUrl = await uploadChatAttachment(fileToUpload, workspace.id, activeThread.id)
+      } catch (err: any) {
+        console.error('File upload error:', err)
+        alert('Failed to upload file. Please try again.')
+        setSending(false)
+        setSelectedFile(fileToUpload)
+        return
+      }
+    }
+
+    const defaultContent = fileName ? `Sent file: ${fileName}` : ''
 
     // Optimistic update
     const optimistic: DirectMessage = {
       id: `opt-${Date.now()}`,
       thread_id: activeThread.id,
       sender_id: user.id,
-      content,
+      content: content || defaultContent,
       created_at: new Date().toISOString(),
+      file_url: fileUrl,
+      file_name: fileName,
+      file_type: fileType,
+      file_size: fileSize,
       sender_name: myName,
       sender_email: user.email || '',
       sender_avatar_url: profile?.avatar_url || null,
@@ -364,17 +469,26 @@ export function ChatPage() {
     setMessages((prev) => [...prev, optimistic])
 
     // Update thread preview
+    const previewText = fileName ? `You: 📎 ${fileName}` : `You: ${content}`
     setThreads((prev) =>
       prev.map((t) =>
         t.id === activeThread.id
-          ? { ...t, last_message_preview: `You: ${content}`, last_message_at: new Date().toISOString() }
+          ? { ...t, last_message_preview: previewText, last_message_at: new Date().toISOString() }
           : t
       )
     )
 
     const { data: savedMsg, error } = await supabase
       .from('direct_messages')
-      .insert({ thread_id: activeThread.id, sender_id: user.id, content })
+      .insert({
+        thread_id: activeThread.id,
+        sender_id: user.id,
+        content: content || defaultContent,
+        file_url: fileUrl,
+        file_name: fileName,
+        file_type: fileType,
+        file_size: fileSize,
+      })
       .select()
       .single()
 
@@ -382,6 +496,7 @@ export function ChatPage() {
       // Rollback optimistic message on error
       setMessages((prev) => prev.filter((m) => m.id !== optimistic.id))
       setInput(content)
+      setSelectedFile(fileToUpload)
       console.error('Failed to send message:', error)
     } else if (savedMsg) {
       // Replace the optimistic entry with the confirmed row (removes opacity-70)
@@ -396,7 +511,7 @@ export function ChatPage() {
     }
 
     setSending(false)
-  }, [input, activeThread, user, profile, sending])
+  }, [input, selectedFile, activeThread, user, profile, workspace.id, sending])
 
   // ── Key handler ──────────────────────────────────────────────────────────────
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -641,13 +756,66 @@ export function ChatPage() {
                               </div>
                             )}
                             <div className={cn(
-                              'max-w-[70%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm',
+                              'max-w-[75%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm',
                               isMine
                                 ? 'bg-violet-600 text-white rounded-br-sm'
                                 : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border border-gray-100 dark:border-gray-700 rounded-bl-sm',
                               msg.id.startsWith('opt-') && 'opacity-70'
                             )}>
-                              {msg.content}
+                              {/* File attachment preview */}
+                              {msg.file_url && (
+                                <div className="mb-2">
+                                  {isImageFile(msg.file_type || msg.file_name) ? (
+                                    <a
+                                      href={msg.file_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="block group relative overflow-hidden rounded-xl border border-black/10 dark:border-white/10 max-w-[280px]"
+                                    >
+                                      <img
+                                        src={msg.file_url}
+                                        alt={msg.file_name || 'Attached image'}
+                                        className="w-full h-auto max-h-[240px] object-cover transition-transform group-hover:scale-105"
+                                      />
+                                    </a>
+                                  ) : (
+                                    <a
+                                      href={msg.file_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      download={msg.file_name || 'download'}
+                                      className={cn(
+                                        'flex items-center gap-3 p-2.5 rounded-xl border transition-colors max-w-[280px]',
+                                        isMine
+                                          ? 'bg-violet-700/60 border-violet-500/40 text-white hover:bg-violet-700'
+                                          : 'bg-gray-50 dark:bg-gray-700/60 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                      )}
+                                    >
+                                      <div className="p-2 rounded-lg bg-white/10 dark:bg-black/20 shrink-0">
+                                        {getFileIcon(msg.file_type || msg.file_name)}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-semibold truncate leading-snug">
+                                          {msg.file_name || 'Attachment'}
+                                        </p>
+                                        {msg.file_size && (
+                                          <p className={cn(
+                                            'text-[10px] mt-0.5',
+                                            isMine ? 'text-violet-200' : 'text-gray-400 dark:text-gray-400'
+                                          )}>
+                                            {formatFileSize(msg.file_size)}
+                                          </p>
+                                        )}
+                                      </div>
+                                      <Download size={15} className="shrink-0 opacity-80" />
+                                    </a>
+                                  )}
+                                </div>
+                              )}
+
+                              {msg.content && msg.content !== `Sent file: ${msg.file_name}` && (
+                                <div>{msg.content}</div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -660,7 +828,50 @@ export function ChatPage() {
 
               {/* Input */}
               <div className="px-4 pb-4 pt-2 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 shrink-0">
+                {/* File Attachment Chip */}
+                {selectedFile && (
+                  <div className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded-xl bg-violet-50 dark:bg-violet-950/60 border border-violet-200 dark:border-violet-800 text-xs text-violet-800 dark:text-violet-200">
+                    <div className="shrink-0">{getFileIcon(selectedFile.type || selectedFile.name)}</div>
+                    <span className="font-semibold truncate flex-1">{selectedFile.name}</span>
+                    <span className="text-[10px] text-violet-500 dark:text-violet-400 shrink-0">
+                      {formatFileSize(selectedFile.size)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedFile(null)}
+                      className="p-1 rounded-md text-violet-400 hover:text-violet-700 dark:hover:text-violet-200 hover:bg-violet-100 dark:hover:bg-violet-900 transition-colors shrink-0"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                )}
+
+                {/* Hidden File Input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      setSelectedFile(e.target.files[0])
+                    }
+                    e.target.value = ''
+                  }}
+                  id="chat-file-input"
+                />
+
                 <div className="flex items-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={sending}
+                    className="p-2.5 rounded-xl text-gray-400 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-gray-700 transition-all shrink-0 mb-0.5"
+                    title="Attach file"
+                    id="btn-attach-file"
+                  >
+                    <Paperclip size={18} />
+                  </button>
+
                   <textarea
                     ref={inputRef}
                     value={input}
@@ -672,18 +883,19 @@ export function ChatPage() {
                     style={{ maxHeight: '120px', overflowY: input.split('\n').length > 3 ? 'auto' : 'hidden' }}
                     id="chat-input"
                   />
+
                   <button
                     onClick={() => void sendMessage()}
-                    disabled={!input.trim() || sending}
+                    disabled={(!input.trim() && !selectedFile) || sending}
                     className={cn(
-                      'p-2.5 rounded-xl text-white transition-all shrink-0 mb-0.5',
-                      input.trim()
+                      'p-2.5 rounded-xl text-white transition-all shrink-0 mb-0.5 flex items-center justify-center',
+                      (input.trim() || selectedFile) && !sending
                         ? 'bg-violet-600 hover:bg-violet-700 shadow-md shadow-violet-200 dark:shadow-violet-900/30'
                         : 'bg-gray-200 dark:bg-gray-700 cursor-not-allowed'
                     )}
                     id="btn-send-chat"
                   >
-                    <Send size={16} />
+                    {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                   </button>
                 </div>
               </div>

@@ -29,12 +29,13 @@ export function playMessageSound() {
       osc.stop(ctx.currentTime + startAt + duration)
     }
 
-    // Two-tone soft ping: high → low
-    play(1046, 0, 0.18, 0.18)   // C6
-    play(784, 0.12, 0.22, 0.12) // G5
+    // Bright, high-pitched 3-note ascending chime (E6 -> A6 -> E7)
+    play(1318.5, 0, 0.15, 0.28)    // E6
+    play(1760.0, 0.07, 0.18, 0.32)  // A6
+    play(2637.0, 0.15, 0.35, 0.38)  // E7
 
     // Close the context after sounds finish to free resources
-    setTimeout(() => ctx.close(), 600)
+    setTimeout(() => ctx.close(), 700)
   } catch {
     // Silently ignore if Web Audio is blocked or unavailable
   }

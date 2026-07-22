@@ -175,6 +175,10 @@ export interface DirectMessage {
   sender_id: string
   content: string
   created_at: string
+  file_url?: string | null
+  file_name?: string | null
+  file_type?: string | null
+  file_size?: number | null
   // Enriched client-side
   sender_name?: string
   sender_email?: string
