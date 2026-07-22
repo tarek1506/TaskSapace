@@ -372,15 +372,27 @@ export function ChatPage() {
       )
     )
 
-    const { error } = await supabase
+    const { data: savedMsg, error } = await supabase
       .from('direct_messages')
       .insert({ thread_id: activeThread.id, sender_id: user.id, content })
+      .select()
+      .single()
 
     if (error) {
       // Rollback optimistic message on error
       setMessages((prev) => prev.filter((m) => m.id !== optimistic.id))
       setInput(content)
       console.error('Failed to send message:', error)
+    } else if (savedMsg) {
+      // Replace the optimistic entry with the confirmed row (removes opacity-70)
+      const confirmed: DirectMessage = {
+        ...optimistic,
+        id: savedMsg.id,
+        created_at: savedMsg.created_at,
+      }
+      setMessages((prev) =>
+        prev.map((m) => (m.id === optimistic.id ? confirmed : m))
+      )
     }
 
     setSending(false)
