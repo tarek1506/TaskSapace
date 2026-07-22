@@ -8,6 +8,10 @@ export function playMessageSound() {
     if (!AudioCtx) return
     const ctx = new AudioCtx()
 
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {})
+    }
+
     const play = (freq: number, startAt: number, duration: number, volume: number) => {
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()

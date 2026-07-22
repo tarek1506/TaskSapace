@@ -105,15 +105,15 @@ export function ChatProvider({
           }
 
           // Verify the message belongs to one of our threads in this workspace
-          const { data: thread } = await supabase
+          const { data: thread, error: threadErr } = await supabase
             .from('direct_message_threads')
-            .select('id')
+            .select('workspace_id, participant_a, participant_b')
             .eq('id', msg.thread_id)
-            .eq('workspace_id', workspaceId)
-            .or(`participant_a.eq.${user?.id},participant_b.eq.${user?.id}`)
-            .maybeSingle()
+            .single()
 
-          if (!thread) return // Not our thread
+          if (threadErr || !thread) return
+          if (thread.workspace_id !== workspaceId) return
+          if (thread.participant_a !== user?.id && thread.participant_b !== user?.id) return
 
           // Fetch sender profile
           const { data: profile } = await supabase
