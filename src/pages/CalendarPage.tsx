@@ -58,21 +58,36 @@ export function CalendarPage() {
         .from('tasks')
         .select('*')
         .eq('workspace_id', workspace.id)
-        .not('due_date', 'is', null)
+        .or('start_date.not.is.null,deadline.not.is.null')
 
       const allTasks = data || []
       setTasks(canViewAll ? allTasks : allTasks.filter(t => t.assigned_to?.includes(user?.id || '')))
       setLoading(false)
     }
-    fetchTasks()
+
+    void fetchTasks()
+
+    const channel = supabase
+      .channel(`calendar-tasks:${workspace.id}:${Date.now()}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'tasks', filter: `workspace_id=eq.${workspace.id}` },
+        () => { void fetchTasks() }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [workspace.id])
 
   // Build a map: day-of-month → tasks for the current month
   const tasksByDay = useMemo(() => {
     const map: Record<number, Task[]> = {}
     for (const task of tasks) {
-      if (!task.due_date) continue
-      const d = parseIsoDate(task.due_date)
+      const taskDate = task.start_date || task.deadline
+      if (!taskDate) continue
+      const d = parseIsoDate(taskDate)
       if (!d) continue
       if (d.getFullYear() === year && d.getMonth() === month) {
         const day = d.getDate()

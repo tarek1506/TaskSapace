@@ -34,11 +34,26 @@ export function TaskDetailPage() {
   const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
-    if (taskId) fetchData()
+    if (taskId) {
+      void fetchData(true)
+
+      const channel = supabase
+        .channel(`task-detail:${taskId}:${Date.now()}`)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'tasks', filter: `id=eq.${taskId}` },
+          () => { void fetchData() }
+        )
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
+      }
+    }
   }, [taskId])
 
-  const fetchData = async () => {
-    setLoading(true)
+  const fetchData = async (showSpinner = false) => {
+    if (showSpinner) setLoading(true)
     const [taskRes, membersRes] = await Promise.all([
       supabase.from('tasks').select('*').eq('id', taskId!).single(),
       supabase
@@ -215,11 +230,11 @@ export function TaskDetailPage() {
                 <div>
                   <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
                     <span className="flex items-center gap-1.5">
-                      <Calendar size={11} /> Due Date
+                      <Calendar size={11} /> Start Date
                     </span>
                   </p>
                   <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                    {task.due_date ? formatDateTime(task.due_date) : '—'}
+                    {task.start_date ? formatDateTime(task.start_date) : '—'}
                   </p>
                 </div>
 

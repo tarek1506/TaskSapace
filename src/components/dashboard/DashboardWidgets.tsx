@@ -361,7 +361,7 @@ const BAR_COLORS = [
 ]
 
 export function GanttMini({ tasks, members }: GanttMiniProps) {
-  const timelineTasks = tasks.filter(t => t.due_date && t.deadline && t.status !== 'done')
+  const timelineTasks = tasks.filter(t => t.start_date && t.deadline && t.status !== 'done')
 
   const memberMap = new Map(members.map(m => [m.user_id, m]))
 
@@ -372,12 +372,12 @@ export function GanttMini({ tasks, members }: GanttMiniProps) {
           <Calendar size={16} className="text-gray-400 dark:text-gray-500" />
           <span className="text-sm font-bold text-gray-900 dark:text-gray-100">Timeline</span>
         </div>
-        <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-8">No tasks with both due date and deadline set</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-8">No tasks with both start date and deadline set</p>
       </div>
     )
   }
 
-  const allDates = timelineTasks.flatMap(t => [new Date(t.due_date!), new Date(t.deadline!)])
+  const allDates = timelineTasks.flatMap(t => [new Date(t.start_date!), new Date(t.deadline!)])
   const minDate = new Date(Math.min(...allDates.map(d => d.getTime())))
   const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())))
 
@@ -464,8 +464,8 @@ export function GanttMini({ tasks, members }: GanttMiniProps) {
       <div className="space-y-2">
         {timelineTasks.map((task, idx) => {
           const member = getMemberInfo(task)
-          const left = getBarLeft(task.due_date!)
-          const width = getBarWidth(task.due_date!, task.deadline!)
+          const left = getBarLeft(task.start_date!)
+          const width = getBarWidth(task.start_date!, task.deadline!)
           const color = BAR_COLORS[idx % BAR_COLORS.length]
           const isFeatured = task.priority === 'high'
 

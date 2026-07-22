@@ -47,7 +47,7 @@ export function TaskModal({
   const [description, setDescription] = useState('')
   const [status, setStatus] = useState<TaskStatus>('todo')
   const [priority, setPriority] = useState<TaskPriority>('none')
-  const [dueDate, setDueDate] = useState('')
+  const [startDate, setStartDate] = useState('')
   const [deadline, setDeadline] = useState('')
   const [projectLabel, setProjectLabel] = useState('')
   const [projectColor, setProjectColor] = useState(PROJECT_COLORS.violet || '#8B5CF6')
@@ -61,7 +61,7 @@ export function TaskModal({
       setDescription(task.description || '')
       setStatus(task.status)
       setPriority(task.priority || 'none')
-      setDueDate(task.due_date || '')
+      setStartDate(task.start_date || '')
       setDeadline(task.deadline || '')
       setProjectLabel(task.project_label || '')
       setProjectColor(task.project_color || '#8B5CF6')
@@ -71,7 +71,7 @@ export function TaskModal({
       setDescription('')
       setStatus('todo')
       setPriority('none')
-      setDueDate('')
+      setStartDate('')
       setDeadline('')
       setProjectLabel('')
       setProjectColor('#8B5CF6')
@@ -96,7 +96,7 @@ export function TaskModal({
       description: description.trim() || null,
       status,
       priority,
-      due_date: dueDate || null,
+      start_date: startDate || null,
       deadline: deadline || null,
       project_label: projectLabel.trim() || null,
       project_color: projectLabel.trim() ? projectColor : null,
@@ -192,16 +192,16 @@ export function TaskModal({
             </SelectContent>
           </Select>
 
-          {/* Due Date */}
+          {/* Start Date */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Due Date</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Start Date</label>
             <div className="relative">
               <DatePicker
-                value={dueDate}
-                onChange={setDueDate}
-                placeholder="Set due date & time"
+                value={startDate}
+                onChange={setStartDate}
+                placeholder="Set start date & time"
                 disabled={!canEdit}
-                id="task-due-date"
+                id="task-start-date"
                 showTime
               />
             </div>

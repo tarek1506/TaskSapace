@@ -15,7 +15,7 @@ interface TaskRowProps {
 export function TaskRow({ task, onClick, onStatusChange, className }: TaskRowProps) {
   const [hovered, setHovered] = useState(false)
   const isDone = task.status === 'done'
-  const overdue = isOverdue(task.due_date) && !isDone
+  const overdue = isOverdue(task.deadline || task.start_date) && !isDone
 
   return (
     <div
@@ -62,15 +62,15 @@ export function TaskRow({ task, onClick, onStatusChange, className }: TaskRowPro
         {task.title}
       </span>
 
-      {/* Due date */}
-      {task.due_date && (
+      {/* Start date / Deadline */}
+      {(task.start_date || task.deadline) && (
         <span
           className={cn(
             'text-xs font-medium hidden sm:block',
             overdue ? 'text-red-500 dark:text-red-400' : 'text-gray-400 dark:text-gray-400'
           )}
         >
-          {formatDate(task.due_date)}
+          {formatDate(task.start_date || task.deadline)}
         </span>
       )}
 

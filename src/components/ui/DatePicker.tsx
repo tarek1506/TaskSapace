@@ -29,27 +29,13 @@ export function DatePicker({
   showTime,
 }: DatePickerProps) {
   const [date, setDate] = React.useState<Date | undefined>(undefined)
-  const [timeStr, setTimeStr] = React.useState("09:00")
+  const [hour12, setHour12] = React.useState<number>(12)
+  const [minute, setMinute] = React.useState<number>(0)
+  const [ampm, setAmPm] = React.useState<'AM' | 'PM'>('PM')
   const [open, setOpen] = React.useState(false)
-  const [viewDate, setViewDate] = React.useState(() => {
-    const parsed = parseIsoDate(value)
-    return parsed || new Date()
-  })
+  const [viewDate, setViewDate] = React.useState(() => parseIsoDate(value) || new Date())
 
-  // 12-hour helpers
-  const to12 = (h24: number) => {
-    const h = h24 % 12 || 12
-    return h
-  }
-  const toAmPm = (h24: number) => (h24 >= 12 ? 'PM' : 'AM')
-  const to24 = (h12: number, ampm: string) => {
-    if (ampm === 'AM') return h12 === 12 ? 0 : h12
-    return h12 === 12 ? 12 : h12 + 12
-  }
-
-  const getDisplayHour = () => to12(parseInt(timeStr.split(':')[0] || '9', 10))
-  const getDisplayAmPm = () => toAmPm(parseInt(timeStr.split(':')[0] || '9', 10))
-
+  // Sync internal state from value prop
   React.useEffect(() => {
     if (value) {
       const d = parseIsoDate(value)
@@ -57,62 +43,86 @@ export function DatePicker({
         setDate(d)
         setViewDate(d)
         if (showTime) {
-          setTimeStr(format(d, "HH:mm"))
+          const h24 = d.getHours()
+          const min = d.getMinutes()
+          setHour12(h24 % 12 || 12)
+          setMinute(min - (min % 5))
+          setAmPm(h24 >= 12 ? 'PM' : 'AM')
         }
       }
     } else {
       setDate(undefined)
-      if (showTime) setTimeStr("09:00")
+      if (showTime) {
+        setHour12(12)
+        setMinute(0)
+        setAmPm('PM')
+      }
     }
   }, [value, showTime])
 
-  const emitChange = (selectedDate: Date, time: string) => {
-    const y = selectedDate.getFullYear()
-    const mo = selectedDate.getMonth()
-    const da = selectedDate.getDate()
+  const get24Hour = (h12: number, ap: 'AM' | 'PM') => {
+    if (ap === 'AM') return h12 === 12 ? 0 : h12
+    return h12 === 12 ? 12 : h12 + 12
+  }
+
+  const emit = (d: Date | undefined, h12: number, min: number, ap: 'AM' | 'PM') => {
+    if (!d) return
+    const y = d.getFullYear()
+    const mo = String(d.getMonth() + 1).padStart(2, '0')
+    const da = String(d.getDate()).padStart(2, '0')
+
     if (showTime) {
-      const [h, m] = (time || '09:00').split(':').map(Number)
-      const d = new Date(y, mo, da, h || 0, m || 0, 0)
-      onChange(format(d, "yyyy-MM-dd'T'HH:mm"))
+      const h24 = get24Hour(h12, ap)
+      const hh = String(h24).padStart(2, '0')
+      const mm = String(min).padStart(2, '0')
+      onChange(`${y}-${mo}-${da}T${hh}:${mm}`)
     } else {
-      const d = new Date(y, mo, da, 12, 0, 0)
-      onChange(format(d, "yyyy-MM-dd"))
+      onChange(`${y}-${mo}-${da}`)
     }
   }
 
-  const set12Hour = (h12: number, ampm: string) => {
-    const h24 = to24(h12, ampm)
-    const newTime = `${String(h24).padStart(2, '0')}:${timeStr.split(':')[1] || '00'}`
-    setTimeStr(newTime)
-    if (date) emitChange(date, newTime)
-  }
-
-  const setAmPm = (ampm: string) => {
-    const h24 = parseInt(timeStr.split(':')[0] || '9', 10)
-    const h12 = to12(h24)
-    const newH24 = to24(h12, ampm)
-    const newTime = `${String(newH24).padStart(2, '0')}:${timeStr.split(':')[1] || '00'}`
-    setTimeStr(newTime)
-    if (date) emitChange(date, newTime)
-  }
-
-  const handleSelect = (selectedDate: Date) => {
-    setDate(selectedDate)
-    emitChange(selectedDate, timeStr)
+  const handleSelectDay = (day: number) => {
+    const newD = new Date(viewDate.getFullYear(), viewDate.getMonth(), day)
+    setDate(newD)
+    emit(newD, hour12, minute, ampm)
     if (!showTime) {
       setOpen(false)
     }
   }
 
+  const handleHourClick = (h: number) => {
+    setHour12(h)
+    const targetDate = date || new Date(viewDate.getFullYear(), viewDate.getMonth(), new Date().getDate())
+    setDate(targetDate)
+    emit(targetDate, h, minute, ampm)
+  }
+
+  const handleMinuteClick = (m: number) => {
+    setMinute(m)
+    const targetDate = date || new Date(viewDate.getFullYear(), viewDate.getMonth(), new Date().getDate())
+    setDate(targetDate)
+    emit(targetDate, hour12, m, ampm)
+  }
+
+  const handleAmPmClick = (ap: 'AM' | 'PM') => {
+    setAmPm(ap)
+    const targetDate = date || new Date(viewDate.getFullYear(), viewDate.getMonth(), new Date().getDate())
+    setDate(targetDate)
+    emit(targetDate, hour12, minute, ap)
+  }
+
   const displayValue = () => {
     if (!date) return null
+    const y = date.getFullYear()
+    const moName = date.toLocaleString('default', { month: 'short' })
+    const da = date.getDate()
+    const dateStr = `${moName} ${da}, ${y}`
+
     if (showTime) {
-      const [h, m] = timeStr.split(':').map(Number)
-      const ampm = h >= 12 ? 'PM' : 'AM'
-      const h12 = h % 12 || 12
-      return format(date, "PPP") + ` ${h12}:${String(m).padStart(2, '0')} ${ampm}`
+      const mStr = String(minute).padStart(2, '0')
+      return `${dateStr} at ${hour12}:${mStr} ${ampm}`
     }
-    return format(date, "PPP")
+    return dateStr
   }
 
   const goToPrevMonth = () => {
@@ -130,30 +140,27 @@ export function DatePicker({
     const startDay = firstDay.getDay()
 
     const days: (number | null)[] = []
-    
-    for (let i = 0; i < startDay; i++) {
-      days.push(null)
-    }
-    
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push(i)
-    }
-    
+    for (let i = 0; i < startDay; i++) days.push(null)
+    for (let i = 1; i <= daysInMonth; i++) days.push(i)
     return days
   }
 
   const isToday = (day: number) => {
     const today = new Date()
-    return day === today.getDate() && 
-           viewDate.getMonth() === today.getMonth() && 
-           viewDate.getFullYear() === today.getFullYear()
+    return (
+      day === today.getDate() &&
+      viewDate.getMonth() === today.getMonth() &&
+      viewDate.getFullYear() === today.getFullYear()
+    )
   }
 
   const isSelected = (day: number) => {
-    return date && 
-           day === date.getDate() && 
-           viewDate.getMonth() === date.getMonth() && 
-           viewDate.getFullYear() === date.getFullYear()
+    return (
+      date &&
+      day === date.getDate() &&
+      viewDate.getMonth() === date.getMonth() &&
+      viewDate.getFullYear() === date.getFullYear()
+    )
   }
 
   const isPastDate = (day: number) => {
@@ -178,7 +185,7 @@ export function DatePicker({
             disabled={disabled}
             id={id}
           >
-            <span className={date ? "text-gray-900" : "text-gray-400"}>
+            <span className={date ? "text-gray-900 dark:text-gray-100 font-medium" : "text-gray-400"}>
               {displayValue() || placeholder}
             </span>
             <ChevronDownIcon className="h-4 w-4 text-gray-400" />
@@ -189,6 +196,7 @@ export function DatePicker({
             {/* Header */}
             <div className="flex items-center justify-between mb-2">
               <button
+                type="button"
                 onClick={goToPrevMonth}
                 className="h-7 w-7 p-0 bg-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg flex items-center justify-center transition-colors"
               >
@@ -198,6 +206,7 @@ export function DatePicker({
                 {monthName} {year}
               </span>
               <button
+                type="button"
                 onClick={goToNextMonth}
                 className="h-7 w-7 p-0 bg-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg flex items-center justify-center transition-colors"
               >
@@ -228,14 +237,15 @@ export function DatePicker({
                 return (
                   <button
                     key={day}
-                    onClick={() => !past && handleSelect(new Date(viewDate.getFullYear(), viewDate.getMonth(), day))}
+                    type="button"
+                    onClick={() => !past && handleSelectDay(day)}
                     disabled={past}
                     className={`
                       h-8 w-8 p-0 flex items-center justify-center text-sm rounded-lg transition-colors
                       ${selected 
-                        ? "bg-violet-600 text-white hover:bg-violet-700" 
+                        ? "bg-violet-600 text-white font-bold hover:bg-violet-700 shadow-sm" 
                         : today 
-                          ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100" 
+                          ? "bg-violet-50 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400 font-bold border border-violet-200 dark:border-violet-800" 
                           : past 
                             ? "text-gray-300 dark:text-gray-600 cursor-not-allowed" 
                             : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
@@ -249,30 +259,30 @@ export function DatePicker({
             </div>
 
             {showTime && (
-              <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
-                <div className="flex items-center gap-2 mb-1.5">
+              <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Time</span>
-                  <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
-                    {getDisplayHour()}:{(timeStr.split(':')[1] || '00')} {getDisplayAmPm()}
+                  <span className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/60 px-2 py-0.5 rounded-md border border-violet-100 dark:border-violet-900">
+                    {hour12}:{String(minute).padStart(2, '0')} {ampm}
                   </span>
                 </div>
                 <div className="flex gap-2">
                   {/* Hours 1-12 */}
                   <div className="flex-1">
-                    <div className="text-[10px] text-gray-400 dark:text-gray-500 font-medium mb-0.5 text-center">Hour</div>
-                    <div className="h-24 overflow-y-auto scrollbar-thin rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/50">
+                    <div className="text-[10px] text-gray-400 dark:text-gray-500 font-medium mb-1 text-center">Hour</div>
+                    <div className="h-28 overflow-y-auto scrollbar-thin rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 p-1 space-y-0.5">
                       {Array.from({ length: 12 }, (_, i) => i + 1).map(h => {
-                        const active = getDisplayHour() === h
+                        const active = hour12 === h
                         return (
                           <button
                             key={h}
                             type="button"
-                            onClick={() => set12Hour(h, getDisplayAmPm())}
+                            onClick={() => handleHourClick(h)}
                             className={cn(
-                              'w-full h-7 flex items-center justify-center text-[11px] transition-colors',
+                              'w-full h-7 rounded-md flex items-center justify-center text-xs transition-colors',
                               active
-                                ? 'bg-violet-600 text-white font-semibold'
-                                : 'text-gray-600 hover:bg-gray-100'
+                                ? 'bg-violet-600 text-white font-bold shadow-sm'
+                                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                             )}
                           >
                             {h}
@@ -283,47 +293,42 @@ export function DatePicker({
                   </div>
                   {/* Minutes */}
                   <div className="flex-1">
-                    <div className="text-[10px] text-gray-400 dark:text-gray-500 font-medium mb-0.5 text-center">Min</div>
-                    <div className="h-24 overflow-y-auto scrollbar-thin rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/50">
+                    <div className="text-[10px] text-gray-400 dark:text-gray-500 font-medium mb-1 text-center">Min</div>
+                    <div className="h-28 overflow-y-auto scrollbar-thin rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 p-1 space-y-0.5">
                       {Array.from({ length: 12 }, (_, i) => i * 5).map(m => {
-                        const mStr = String(m).padStart(2, '0')
-                        const active = timeStr.split(':')[1] === mStr
+                        const active = minute === m
                         return (
                           <button
                             key={m}
                             type="button"
-                            onClick={() => {
-                              const newTime = `${timeStr.split(':')[0] || '09'}:${mStr}`
-                              setTimeStr(newTime)
-                              if (date) emitChange(date, newTime)
-                            }}
+                            onClick={() => handleMinuteClick(m)}
                             className={cn(
-                              'w-full h-7 flex items-center justify-center text-[11px] transition-colors',
+                              'w-full h-7 rounded-md flex items-center justify-center text-xs transition-colors',
                               active
-                                ? 'bg-violet-600 text-white font-semibold'
-                                : 'text-gray-600 hover:bg-gray-100'
+                                ? 'bg-violet-600 text-white font-bold shadow-sm'
+                                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                             )}
                           >
-                            {mStr}
+                            {String(m).padStart(2, '0')}
                           </button>
                         )
                       })}
                     </div>
                   </div>
                   {/* AM/PM */}
-                  <div className="w-12">
-                    <div className="text-[10px] text-gray-400 dark:text-gray-500 font-medium mb-0.5 text-center">&nbsp;</div>
-                    <div className="rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/50 overflow-hidden">
-                      {['AM', 'PM'].map(ap => (
+                  <div className="w-14">
+                    <div className="text-[10px] text-gray-400 dark:text-gray-500 font-medium mb-1 text-center">&nbsp;</div>
+                    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 p-1 space-y-1">
+                      {(['AM', 'PM'] as const).map(ap => (
                         <button
                           key={ap}
                           type="button"
-                          onClick={() => setAmPm(ap)}
+                          onClick={() => handleAmPmClick(ap)}
                           className={cn(
-                            'w-full h-[48px] flex items-center justify-center text-[11px] font-medium transition-colors',
-                            getDisplayAmPm() === ap
-                              ? 'bg-violet-600 text-white font-semibold'
-                              : 'text-gray-600 hover:bg-gray-100'
+                            'w-full h-11 rounded-md flex items-center justify-center text-xs font-bold transition-colors',
+                            ampm === ap
+                              ? 'bg-violet-600 text-white shadow-sm'
+                              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                           )}
                         >
                           {ap}

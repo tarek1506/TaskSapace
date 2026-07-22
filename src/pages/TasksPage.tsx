@@ -69,10 +69,25 @@ export function TasksPage() {
 
   const profileMap = useMemo(() => new Map(members.map(m => [m.user_id, m])), [members])
 
-  useEffect(() => { fetchData() }, [workspace.id])
+  useEffect(() => {
+    void fetchData(true)
 
-  const fetchData = async () => {
-    setLoading(true)
+    const channel = supabase
+      .channel(`tasks:${workspace.id}:${Date.now()}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'tasks', filter: `workspace_id=eq.${workspace.id}` },
+        () => { void fetchData() }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [workspace.id])
+
+  const fetchData = async (showSpinner = false) => {
+    if (showSpinner) setLoading(true)
     const [tasksRes, membersRes, freshMemberRes] = await Promise.all([
       supabase.from('tasks').select('*').eq('workspace_id', workspace.id).order('order_index', { ascending: true }),
       supabase.from('workspace_members').select('*').eq('workspace_id', workspace.id),
@@ -412,10 +427,10 @@ export function TasksPage() {
                                   {task.comments_count}
                                 </span>
                               )}
-                              {task.due_date && (
+                              {task.start_date && (
                                 <span className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-gray-500">
                                   <Calendar size={10} />
-                                  {formatDate(task.due_date)}
+                                  {formatDate(task.start_date)}
                                 </span>
                               )}
                             </div>
@@ -456,7 +471,7 @@ export function TasksPage() {
                   <th className="px-5 py-3">Status</th>
                   <th className="px-5 py-3">Priority</th>
                   <th className="px-5 py-3">Assignees</th>
-                  <th className="px-5 py-3">Due Date</th>
+                  <th className="px-5 py-3">Start Date</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
@@ -531,9 +546,9 @@ export function TasksPage() {
                         </div>
                       </td>
                       <td className="px-5 py-3.5">
-                        {task.due_date && (
+                        {task.start_date && (
                           <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {formatDate(task.due_date)}
+                            {formatDate(task.start_date)}
                           </span>
                         )}
                       </td>
@@ -594,9 +609,9 @@ export function TasksPage() {
                       />
                     ))}
                   </div>
-                  {task.due_date && (
+                  {task.start_date && (
                     <span className="text-xs text-gray-400 dark:text-gray-500 w-16 text-right shrink-0">
-                      {formatDate(task.due_date)}
+                      {formatDate(task.start_date)}
                     </span>
                   )}
                 </div>

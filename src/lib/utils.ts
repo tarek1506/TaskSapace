@@ -32,19 +32,27 @@ export function getAvatarColor(str: string): string {
 export function parseIsoDate(iso: string | null | undefined): Date | null {
   if (!iso) return null
   const str = iso.trim()
-  // Pure date YYYY-MM-DD
+
+  // 1. Pure date YYYY-MM-DD (no time component)
   if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
     const [y, m, d] = str.split('-').map(Number)
     return new Date(y, m - 1, d, 12, 0, 0)
   }
-  // Midnight UTC string from date-only column (e.g. 2026-07-25T00:00:00Z)
-  const match = str.match(/^(\d{4})-(\d{2})-(\d{2})T00:00:00(?:\.000)?(?:Z|\+00:00)?$/)
-  if (match) {
-    const y = parseInt(match[1], 10)
-    const m = parseInt(match[2], 10)
-    const d = parseInt(match[3], 10)
-    return new Date(y, m - 1, d, 12, 0, 0)
+
+  // 2. ISO timestamp string (e.g. 2026-07-22T13:00 or 2026-07-22T13:00:00.000Z)
+  // Extracts literal YYYY, MM, DD, HH, mm directly to preserve exact user selection
+  const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/)
+  if (isoMatch) {
+    const y = parseInt(isoMatch[1], 10)
+    const m = parseInt(isoMatch[2], 10)
+    const d = parseInt(isoMatch[3], 10)
+    const h = parseInt(isoMatch[4], 10)
+    const min = parseInt(isoMatch[5], 10)
+    const sec = parseInt(isoMatch[6] || '0', 10)
+    return new Date(y, m - 1, d, h, min, sec)
   }
+
+  // 3. Fallback for any other date format
   const parsed = new Date(str)
   return isNaN(parsed.getTime()) ? null : parsed
 }

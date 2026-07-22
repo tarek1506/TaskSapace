@@ -54,7 +54,7 @@ begin
     if (old.title = new.title and 
         coalesce(old.description, '') = coalesce(new.description, '') and 
         old.status = new.status and 
-        coalesce(old.due_date, '1970-01-01'::date) = coalesce(new.due_date, '1970-01-01'::date) and
+        coalesce(old.start_date, '1970-01-01'::timestamptz) = coalesce(new.start_date, '1970-01-01'::timestamptz) and
         old.assigned_to = new.assigned_to) then
       return new;
     end if;

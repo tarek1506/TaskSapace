@@ -38,7 +38,7 @@ export interface Task {
   description: string | null
   status: TaskStatus
   priority: TaskPriority
-  due_date: string | null
+  start_date: string | null
   deadline: string | null
   project_label: string | null
   project_color: string | null
