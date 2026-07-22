@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Outlet, useParams, useNavigate } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import { DashboardSidebar } from './DashboardSidebar'
@@ -47,6 +47,34 @@ export function WorkspaceLayout() {
   useEffect(() => {
     setSidebarOpen(false)
   }, [id])
+
+  // ── Presence heartbeat ─────────────────────────────────────────────────────
+  // Updates last_seen_at immediately on mount and every 60 s so the user
+  // appears online in chat while the app is open.
+  const pingPresence = useCallback(async () => {
+    if (!user) return
+    await supabase
+      .from('profiles')
+      .update({ last_seen_at: new Date().toISOString() })
+      .eq('id', user.id)
+  }, [user])
+
+  useEffect(() => {
+    void pingPresence() // immediate ping on mount
+
+    const interval = setInterval(() => void pingPresence(), 60_000)
+
+    // Also ping when the user switches back to this tab
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') void pingPresence()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
+  }, [pingPresence])
 
   if (loading) {
     return (
