@@ -125,6 +125,18 @@ export function DatePicker({
     return dateStr
   }
 
+  const handleSelectToday = () => {
+    const today = new Date()
+    setDate(today)
+    setViewDate(today)
+    emit(today, hour12, minute, ampm)
+  }
+
+  const handleClearDate = () => {
+    setDate(undefined)
+    onChange('')
+  }
+
   const goToPrevMonth = () => {
     setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))
   }
@@ -191,8 +203,38 @@ export function DatePicker({
             <ChevronDownIcon className="h-4 w-4 text-gray-400" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-xl max-h-[calc(100vh-2rem)] overflow-y-auto scrollbar-thin" align="start">
+        <PopoverContent className="w-auto p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-xl rounded-2xl max-h-[calc(100vh-2rem)] overflow-y-auto scrollbar-thin" align="start">
           <div style={{ minWidth: "280px" }}>
+            {/* Top Selected Summary Header */}
+            <div className="mb-3 pb-2.5 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+              <div>
+                <div className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                  Selected Date
+                </div>
+                <div className="text-xs font-bold text-violet-600 dark:text-violet-400 mt-0.5">
+                  {displayValue() || "No date selected"}
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={handleSelectToday}
+                  className="text-[10px] font-semibold px-2 py-1 rounded-md bg-violet-50 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900 transition-colors"
+                >
+                  Today
+                </button>
+                {date && (
+                  <button
+                    type="button"
+                    onClick={handleClearDate}
+                    className="text-[10px] font-semibold px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400 transition-colors"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Header */}
             <div className="flex items-center justify-between mb-2">
               <button

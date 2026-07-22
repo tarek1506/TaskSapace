@@ -39,20 +39,24 @@ export function parseIsoDate(iso: string | null | undefined): Date | null {
     return new Date(y, m - 1, d, 12, 0, 0)
   }
 
-  // 2. ISO timestamp string (e.g. 2026-07-22T13:00 or 2026-07-22T13:00:00.000Z)
-  // Extracts literal YYYY, MM, DD, HH, mm directly to preserve exact user selection
-  const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/)
-  if (isoMatch) {
-    const y = parseInt(isoMatch[1], 10)
-    const m = parseInt(isoMatch[2], 10)
-    const d = parseInt(isoMatch[3], 10)
-    const h = parseInt(isoMatch[4], 10)
-    const min = parseInt(isoMatch[5], 10)
-    const sec = parseInt(isoMatch[6] || '0', 10)
+  // 2. Full ISO string with Z or UTC offset (e.g. 2026-07-22T10:00:00.000Z or +03:00)
+  if (/[Zz]|\+\d{2}:?\d{2}|-\d{2}:?\d{2}/.test(str)) {
+    const parsed = new Date(str)
+    return isNaN(parsed.getTime()) ? null : parsed
+  }
+
+  // 3. Plain local YYYY-MM-DDTHH:mm string without timezone suffix
+  const localMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/)
+  if (localMatch) {
+    const y = parseInt(localMatch[1], 10)
+    const m = parseInt(localMatch[2], 10)
+    const d = parseInt(localMatch[3], 10)
+    const h = parseInt(localMatch[4], 10)
+    const min = parseInt(localMatch[5], 10)
+    const sec = parseInt(localMatch[6] || '0', 10)
     return new Date(y, m - 1, d, h, min, sec)
   }
 
-  // 3. Fallback for any other date format
   const parsed = new Date(str)
   return isNaN(parsed.getTime()) ? null : parsed
 }
