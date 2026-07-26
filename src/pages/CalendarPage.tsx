@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useOutletContext, useNavigate } from 'react-router-dom'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { cn, parseIsoDate } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
@@ -20,6 +20,89 @@ const STATUS_BUBBLE_CLASSES: Record<string, string> = {
   done: 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400',
 }
 
+const STATUS_DOT: Record<string, string> = {
+  todo: 'bg-blue-500',
+  in_progress: 'bg-amber-500',
+  done: 'bg-emerald-500',
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  todo: 'To Do',
+  in_progress: 'In Progress',
+  done: 'Done',
+}
+
+interface DayOverlayProps {
+  day: number
+  month: number
+  year: number
+  tasks: Task[]
+  workspaceId: string
+  onClose: () => void
+}
+
+function DayOverlay({ day, month, year, tasks, workspaceId, onClose }: DayOverlayProps) {
+  const navigate = useNavigate()
+  const date = new Date(year, month, day)
+  const dateLabel = date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      <div
+        className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden border border-gray-100 dark:border-gray-700"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between px-5 pt-5 pb-4 border-b border-gray-100 dark:border-gray-700">
+          <div>
+            <div className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Tasks for</div>
+            <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">{dateLabel}</h2>
+            <span className="inline-flex items-center gap-1.5 mt-1 text-xs font-medium text-gray-400 dark:text-gray-500">
+              <span className="w-1.5 h-1.5 rounded-full bg-violet-500 inline-block" />
+              {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
+            </span>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <X size={16} />
+          </button>
+        </div>
+        <div className="overflow-y-auto flex-1 px-3 py-3 space-y-1.5">
+          {tasks.map(task => (
+            <button
+              key={task.id}
+              onClick={() => { onClose(); navigate(`/workspace/${workspaceId}/tasks/${task.id}`) }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-gray-50 dark:hover:bg-gray-700/60 transition-colors group"
+            >
+              <span className={cn('w-2 h-2 rounded-full shrink-0', STATUS_DOT[task.status])} />
+              <span className="flex-1 min-w-0">
+                <span className={cn(
+                  'block text-sm font-medium truncate',
+                  task.status === 'done' ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-gray-100'
+                )}>{task.title}</span>
+                <span className="flex items-center gap-2 mt-0.5">
+                  <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded', STATUS_BUBBLE_CLASSES[task.status])}>{STATUS_LABEL[task.status]}</span>
+                  {task.project_label && (
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${task.project_color || '#8B5CF6'}18`, color: task.project_color || '#8B5CF6' }}>
+                      {task.project_label}
+                    </span>
+                  )}
+                </span>
+              </span>
+              <ChevronRight size={14} className="text-gray-300 dark:text-gray-600 group-hover:text-gray-400 transition-colors shrink-0" />
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function CalendarPage() {
   const { workspace, member, isOwner } = useOutletContext<OutletCtx>()
   const { user } = useAuth()
@@ -27,6 +110,7 @@ export function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
+  const [overlayDay, setOverlayDay] = useState<number | null>(null)
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -97,6 +181,8 @@ export function CalendarPage() {
     }
     return map
   }, [tasks, year, month])
+
+  const overlayTasks = overlayDay !== null ? (tasksByDay[overlayDay] || []) : []
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -174,7 +260,12 @@ export function CalendarPage() {
                         </div>
                       ))}
                       {dayTasks.length > 3 && (
-                        <div className="text-[10px] text-gray-400 dark:text-gray-500 px-1">+{dayTasks.length - 3} more</div>
+                        <button
+                          onClick={() => setOverlayDay(day)}
+                          className="text-[10px] font-bold px-1.5 py-0.5 w-full text-left rounded-md bg-violet-50 dark:bg-violet-950/50 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/50 transition-colors cursor-pointer"
+                        >
+                          +{dayTasks.length - 3} more
+                        </button>
                       )}
                     </div>
                   </div>
@@ -184,6 +275,17 @@ export function CalendarPage() {
           )}
         </div>
       </div>
+
+      {overlayDay !== null && (
+        <DayOverlay
+          day={overlayDay}
+          month={month}
+          year={year}
+          tasks={overlayTasks}
+          workspaceId={workspace.id}
+          onClose={() => setOverlayDay(null)}
+        />
+      )}
     </div>
   )
 }
